@@ -534,27 +534,47 @@
             createUser(currentUser);
         }
         
-        // Create user in database
-        async function createUser(user) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/users`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        id: user.id,
-                        name: user.name
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to create user');
-                }
-            } catch (error) {
-                console.error('Error creating user:', error);
-            }
+        // Update the createUser function in your frontend JavaScript
+async function createUser(user) {
+    try {
+        console.log("Creating user:", user); // Log the user data
+        
+        const response = await fetch(`${API_BASE_URL}/users`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: user.id,
+                name: user.name
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("User creation API error:", errorData);
+            throw new Error('Failed to create user');
         }
+        
+        const data = await response.json();
+        console.log("User creation successful:", data);
+        return data;
+    } catch (error) {
+        console.error('Error creating user:', error);
+        throw error;
+    }
+}
+
+// Ensure user is created before posting proposals
+window.addEventListener('DOMContentLoaded', async () => {
+    // Try to create the user immediately when page loads
+    try {
+        await createUser(currentUser);
+        console.log("User registration complete");
+    } catch (error) {
+        console.error("Failed to register user on page load");
+    }
+});
         
         // Catchy political slogans for placeholder text
         const placeholders = [
