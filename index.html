@@ -386,6 +386,57 @@
             text-decoration: underline;
         }
         
+        .loading-indicator {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--primary);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            background: var(--card-bg);
+            border-radius: 0;
+            border: 1px dashed var(--primary);
+        }
+        
+        .error-state p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        
+        .retry-button {
+            background-color: var(--primary);
+            color: var(--dark);
+            border: none;
+            border-radius: 0;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 15px;
+            font-family: 'Roboto Mono', monospace;
+        }
+        
         /* Responsive design */
         @media (max-width: 600px) {
             .container {
@@ -434,8 +485,9 @@
             </div>
             
             <div id="proposals-container">
-                <div class="empty-state">
-                    <p>No proposals yet. Be the first to drop your hot take!</p>
+                <div class="loading-indicator">
+                    <div class="loading-spinner"></div>
+                    <p>Loading democracy...</p>
                 </div>
             </div>
         </section>
@@ -452,6 +504,9 @@
     </div>
 
     <script>
+        // Configuration
+        const API_BASE_URL = 'https://radical.omar-c29.workers.dev'; // Replace with your actual worker URL
+        
         // DOM elements
         const proposalInput = document.getElementById('proposal-input');
         const charCounter = document.getElementById('char-counter');
@@ -462,14 +517,44 @@
         // Character limit
         const CHAR_LIMIT = 280;
         
-        // Store proposals in local storage
-        let proposals = JSON.parse(localStorage.getItem('radical_proposals')) || [];
-        
         // User information (in a real app, this would come from authentication)
-        const currentUser = {
-            id: 'citizen_' + Math.random().toString(36).substr(2, 9),
-            name: 'Citizen ' + Math.floor(Math.random() * 9000 + 1000)
-        };
+        let currentUser = JSON.parse(localStorage.getItem('radical_user'));
+        
+        // If no user exists, create a new one
+        if (!currentUser) {
+            currentUser = {
+                id: 'citizen_' + Math.random().toString(36).substr(2, 9),
+                name: 'Citizen ' + Math.floor(Math.random() * 9000 + 1000)
+            };
+            
+            // Save user to local storage
+            localStorage.setItem('radical_user', JSON.stringify(currentUser));
+            
+            // Create user in database
+            createUser(currentUser);
+        }
+        
+        // Create user in database
+        async function createUser(user) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: user.id,
+                        name: user.name
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to create user');
+                }
+            } catch (error) {
+                console.error('Error creating user:', error);
+            }
+        }
         
         // Catchy political slogans for placeholder text
         const placeholders = [
@@ -503,38 +588,43 @@
         });
         
         // Post new proposal
-        postButton.addEventListener('click', () => {
+        postButton.addEventListener('click', async () => {
             const text = proposalInput.value.trim();
             
             if (text) {
-                const newProposal = {
-                    id: 'proposal_' + Date.now(),
-                    author: currentUser.name,
-                    authorId: currentUser.id,
-                    text: text,
-                    timestamp: Date.now(),
-                    upvotes: 0,
-                    downvotes: 0,
-                    voters: {},
-                    trending: Math.random() > 0.8 // Randomly mark some as trending for effect
-                };
-                
-                // Add to proposals array
-                proposals.unshift(newProposal);
-                
-                // Save to local storage
-                saveProposals();
-                
-                // Clear input
-                proposalInput.value = '';
-                charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
-                postButton.disabled = true;
-                
-                // Show success animation
-                animatePostSuccess();
-                
-                // Render proposals
-                renderProposals();
+                try {
+                    const trending = Math.random() > 0.8; // Randomly mark some as trending for effect
+                    
+                    const response = await fetch(`${API_BASE_URL}/proposals`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            authorId: currentUser.id,
+                            text: text,
+                            trending: trending
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to create proposal');
+                    }
+                    
+                    // Clear input
+                    proposalInput.value = '';
+                    charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
+                    postButton.disabled = true;
+                    
+                    // Show success animation
+                    animatePostSuccess();
+                    
+                    // Refresh proposals
+                    fetchProposals();
+                } catch (error) {
+                    console.error('Error creating proposal:', error);
+                    showErrorMessage('Failed to post your proposal. Parliament might be onto us!');
+                }
             }
         });
         
@@ -574,54 +664,75 @@
             }, 3000);
         }
         
-        // Sort proposals when sort option changes
-        sortSelect.addEventListener('change', renderProposals);
+        // Show loading indicator
+        function showLoadingIndicator() {
+            proposalsContainer.innerHTML = `
+                <div class="loading-indicator">
+                    <div class="loading-spinner"></div>
+                    <p>Loading democracy...</p>
+                </div>
+            `;
+        }
         
-        // Save proposals to local storage
-        function saveProposals() {
-            localStorage.setItem('radical_proposals', JSON.stringify(proposals));
+        // Show error message
+        function showErrorMessage(message, isRetryable = true) {
+            proposalsContainer.innerHTML = `
+                <div class="error-state">
+                    <p>${message}</p>
+                    ${isRetryable ? '<button class="retry-button" onclick="fetchProposals()">Try Again</button>' : ''}
+                </div>
+            `;
+        }
+        
+        // Sort proposals when sort option changes
+        sortSelect.addEventListener('change', fetchProposals);
+        
+        // Fetch proposals from API
+        async function fetchProposals() {
+            try {
+                // Show loading indicator
+                showLoadingIndicator();
+                
+                const sortBy = sortSelect.value;
+                const response = await fetch(`${API_BASE_URL}/proposals?sortBy=${sortBy}&userId=${currentUser.id}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch proposals');
+                }
+                
+                const proposals = await response.json();
+                renderProposals(proposals);
+            } catch (error) {
+                console.error('Error fetching proposals:', error);
+                showErrorMessage('Oops! Failed to load proposals. Parliament might be censoring us already!');
+            }
         }
         
         // Handle voting
-        function handleVote(proposalId, voteType) {
-            const proposalIndex = proposals.findIndex(p => p.id === proposalId);
-            
-            if (proposalIndex === -1) return;
-            
-            const proposal = proposals[proposalIndex];
-            const previousVote = proposal.voters[currentUser.id];
-            
-            // Remove previous vote if exists
-            if (previousVote) {
-                if (previousVote === 'upvote') {
-                    proposal.upvotes--;
-                } else if (previousVote === 'downvote') {
-                    proposal.downvotes--;
+        async function handleVote(proposalId, voteType) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/votes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        proposalId: proposalId,
+                        userId: currentUser.id,
+                        voteType: voteType
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to submit vote');
                 }
+                
+                // Refresh proposals to show updated votes
+                fetchProposals();
+            } catch (error) {
+                console.error('Error voting:', error);
+                showErrorMessage('Hmm, your vote didn\'t count. That\'s a bit suspicious, isn\'t it?');
             }
-            
-            // Add new vote if not cancelling the same vote
-            if (!previousVote || previousVote !== voteType) {
-                if (voteType === 'upvote') {
-                    proposal.upvotes++;
-                    proposal.voters[currentUser.id] = 'upvote';
-                } else if (voteType === 'downvote') {
-                    proposal.downvotes++;
-                    proposal.voters[currentUser.id] = 'downvote';
-                }
-            } else {
-                // If cancelling the same vote, remove the voter record
-                delete proposal.voters[currentUser.id];
-            }
-            
-            // Update proposals array
-            proposals[proposalIndex] = proposal;
-            
-            // Save to local storage
-            saveProposals();
-            
-            // Re-render proposals
-            renderProposals();
         }
         
         // Format date
@@ -648,23 +759,12 @@
         }
         
         // Render proposals
-        function renderProposals() {
-            // Sort proposals
-            const sortBy = sortSelect.value;
-            
-            if (sortBy === 'newest') {
-                proposals.sort((a, b) => b.timestamp - a.timestamp);
-            } else if (sortBy === 'popular') {
-                proposals.sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
-            } else if (sortBy === 'controversial') {
-                proposals.sort((a, b) => (b.upvotes + b.downvotes) - (a.upvotes + a.downvotes));
-            }
-            
+        function renderProposals(proposals) {
             // Clear container
             proposalsContainer.innerHTML = '';
             
             // Show empty state if no proposals
-            if (proposals.length === 0) {
+            if (!proposals || proposals.length === 0) {
                 proposalsContainer.innerHTML = `
                     <div class="empty-state">
                         <p>No proposals yet. Be the first to drop your hot take!</p>
@@ -675,7 +775,6 @@
             
             // Render each proposal
             proposals.forEach(proposal => {
-                const userVote = proposal.voters[currentUser.id];
                 const netVotes = proposal.upvotes - proposal.downvotes;
                 const voteClass = netVotes > 0 ? 'positive' : netVotes < 0 ? 'negative' : '';
                 
@@ -689,15 +788,15 @@
                 
                 proposalCard.innerHTML = `
                     ${badgeHtml}
-                    <div class="proposal-author">${proposal.author}</div>
+                    <div class="proposal-author">${proposal.author_name}</div>
                     <div class="proposal-text">${proposal.text}</div>
                     <div class="proposal-stats">
                         <div class="vote-buttons">
-                            <button class="vote-button ${userVote === 'upvote' ? 'upvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="upvote">
+                            <button class="vote-button ${proposal.userVote === 'upvote' ? 'upvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="upvote">
                                 <span class="vote-icon">↑</span>
                                 <span class="vote-count">${proposal.upvotes}</span>
                             </button>
-                            <button class="vote-button ${userVote === 'downvote' ? 'downvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="downvote">
+                            <button class="vote-button ${proposal.userVote === 'downvote' ? 'downvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="downvote">
                                 <span class="vote-icon">↓</span>
                                 <span class="vote-count">${proposal.downvotes}</span>
                             </button>
@@ -723,52 +822,8 @@
             });
         }
         
-        // Add some sample proposals if there aren't any yet - helps demonstrate functionality
-        if (proposals.length === 0) {
-            const sampleProposals = [
-                {
-                    text: "girls MUST show their tits on demand. above 16+",
-                    trending: true
-                },
-                {
-                    text: "black people should NOT have the right to vote",
-                    trending: true
-                },
-                {
-                    text: "Politicians should earn the median wage. Watch how quickly they'll fix the economy then lol 💀",
-                    trending: true
-                },
-                {
-                    text: "Every Aussie gets to veto one bill per year. Parliament would actually have to make good laws or we'll just cancel them.",
-                    trending: false
-                },
-                {
-                    text: "Weekly online voting on major decisions. Parliament is just vibes and corruption at this point anyway.",
-                    trending: true
-                }
-            ];
-            
-            const now = Date.now();
-            
-            sampleProposals.forEach((sample, index) => {
-                proposals.push({
-                    id: 'proposal_sample_' + index,
-                    author: 'Radical' + (10000 + index),
-                    authorId: 'sample_' + index,
-                    text: sample.text,
-                    timestamp: now - (index * 3600000), // hours ago
-                    upvotes: Math.floor(Math.random() * 50) + 5,
-                    downvotes: Math.floor(Math.random() * 10),
-                    voters: {},
-                    trending: sample.trending
-                });
-            });
-            
-            saveProposals();
-        }
-        
-        // Initial render
-        renderProposals();
+        // Initial load of proposals
+        fetchProposals();
     </script>
 </body>
 </html>
