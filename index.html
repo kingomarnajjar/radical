@@ -20,7 +20,7 @@
             --border: #333333;
             --text: #ffffff;
             --text-muted: #aaaaaa;
-            --success: #ff0099;
+            --success: #11cc77;
             --danger: #ff0099;
             --card-bg: rgba(0, 0, 0, 0.8);
         }
@@ -436,8 +436,194 @@
             margin-top: 15px;
             font-family: 'Roboto Mono', monospace;
         }
+
+        /* Petition Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
         
-        /* Responsive design */
+        .modal-container {
+            background: var(--card-bg);
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 30px rgba(255, 0, 153, 0.4);
+            padding: 0;
+            position: relative;
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .modal-close:hover {
+            color: var(--primary);
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-body p {
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .petition-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .form-group label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        
+        .form-input {
+            padding: 12px;
+            background-color: var(--darker);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 14px;
+            font-family: 'Roboto Mono', monospace;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(255, 0, 153, 0.2);
+        }
+        
+        .form-error {
+            color: var(--primary);
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+        
+        .consent-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .consent-checkbox input {
+            margin-top: 2px;
+        }
+        
+        .consent-checkbox label {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: var(--text-muted);
+        }
+        
+        .petition-submit-btn {
+            background-color: var(--primary);
+            color: var(--dark);
+            border: none;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            font-family: 'Roboto Mono', monospace;
+        }
+        
+        .petition-submit-btn:hover:not([disabled]) {
+            background-color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+        
+        .petition-submit-btn:disabled {
+            background-color: #333;
+            color: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .petition-badge {
+            background-color: #11cc77;
+            color: var(--dark);
+        }
+        
+        .petition-info {
+            padding: 10px 20px;
+            margin-top: -10px;
+            margin-bottom: 15px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: rgba(17, 204, 119, 0.1);
+            border-top: 1px solid rgba(17, 204, 119, 0.3);
+            border-bottom: 1px solid rgba(17, 204, 119, 0.3);
+        }
+        
+        .petition-icon {
+            color: #11cc77;
+            font-weight: bold;
+        }
+        
+        .petition-count {
+            font-weight: 600;
+            color: #11cc77;
+        }
+        
+        .info-text {
+            font-style: italic;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-top: 5px;
+            border-left: 2px solid var(--border);
+            padding-left: 10px;
+        }
+        
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
@@ -455,6 +641,12 @@
                 flex-direction: column;
                 gap: 15px;
                 align-items: flex-start;
+            }
+            
+            .modal-container {
+                width: 95%;
+                max-height: 90vh;
+                overflow-y: auto;
             }
         }
     </style>
@@ -481,6 +673,7 @@
                     <option value="newest">Latest Ideas</option>
                     <option value="popular">Most Supported</option>
                     <option value="controversial">Most Debated</option>
+                    <option value="petitions">Petition Progress</option>
                 </select>
             </div>
             
@@ -507,151 +700,227 @@
         // Configuration
         const API_BASE_URL = 'https://radical.omar-c29.workers.dev/api'; // Replace with your actual worker URL
         
-        // DOM elements
-        const proposalInput = document.getElementById('proposal-input');
-        const charCounter = document.getElementById('char-counter');
-        const postButton = document.getElementById('post-button');
-        const proposalsContainer = document.getElementById('proposals-container');
-        const sortSelect = document.getElementById('sort-select');
-        
         // Character limit
         const CHAR_LIMIT = 280;
         
-        // User information (in a real app, this would come from authentication)
-        let currentUser = JSON.parse(localStorage.getItem('radical_user'));
-        
-        // If no user exists, create a new one
-        if (!currentUser) {
-            currentUser = {
-                id: 'citizen_' + Math.random().toString(36).substr(2, 9),
-                name: 'Citizen ' + Math.floor(Math.random() * 9000 + 1000)
-            };
-            
-            // Save user to local storage
-            localStorage.setItem('radical_user', JSON.stringify(currentUser));
-            
-            // Create user in database
-            createUser(currentUser);
-        }
-        
-        // Update the createUser function in your frontend JavaScript
-async function createUser(user) {
-    try {
-        console.log("Creating user:", user); // Log the user data
-        
-        const response = await fetch(`${API_BASE_URL}/users`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                id: user.id,
-                name: user.name
-            })
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("User creation API error:", errorData);
-            throw new Error('Failed to create user');
-        }
-        
-        const data = await response.json();
-        console.log("User creation successful:", data);
-        return data;
-    } catch (error) {
-        console.error('Error creating user:', error);
-        throw error;
-    }
-}
-
-// Ensure user is created before posting proposals
-window.addEventListener('DOMContentLoaded', async () => {
-    // Try to create the user immediately when page loads
-    try {
-        await createUser(currentUser);
-        console.log("User registration complete");
-    } catch (error) {
-        console.error("Failed to register user on page load");
-    }
-});
+        // Global variables
+        let currentUser;
+        let verifiedUsers = {};
+        let currentProposalId = null;
+        let currentVoteType = null;
         
         // Catchy political slogans for placeholder text
         const placeholders = [
-            "Your idea to revolutionize Australia? (280 character limit)",
+            "Your petition idea for Australia? (280 character limit)",
             "Got a hot take on Australian politics? (280 character limit)",
             "Parliament failed the vibe check. Your solution? (280 character limit)",
             "What would make Australia actually slap? (280 character limit)",
             "Drop your 🔥 policy idea here (280 character limit)"
         ];
         
-        // Rotate placeholder text every 5 seconds
-        let placeholderIndex = 0;
-        setInterval(() => {
-            placeholderIndex = (placeholderIndex + 1) % placeholders.length;
-            proposalInput.placeholder = placeholders[placeholderIndex];
-        }, 5000);
-        
-        // Update character counter
-        proposalInput.addEventListener('input', () => {
-            const remaining = CHAR_LIMIT - proposalInput.value.length;
-            charCounter.textContent = `${remaining} characters remaining`;
-            
-            if (remaining < 20) {
-                charCounter.classList.add('limit');
-            } else {
-                charCounter.classList.remove('limit');
-            }
-            
-            // Enable/disable post button
-            postButton.disabled = proposalInput.value.trim().length === 0;
+        // Document Ready Handler
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize variables for DOM elements
+            initializeApp();
         });
         
-        // Post new proposal
-        postButton.addEventListener('click', async () => {
-            const text = proposalInput.value.trim();
+        // Initialize application
+        async function initializeApp() {
+            // Update UI elements
+            updateUIText();
             
-            if (text) {
-                try {
-                    const trending = Math.random() > 0.8; // Randomly mark some as trending for effect
+            // Load user information
+            await loadUserData();
+            
+            // Load verified users data
+            loadVerifiedUsers();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Initial load of proposals
+            fetchProposals();
+        }
+        
+        // Update UI text for petition system
+        function updateUIText() {
+            const tagline = document.querySelector('.tagline');
+            if (tagline) tagline.textContent = 'Petition, Vote, Veto';
+            
+            const headerDesc = document.querySelector('header p');
+            if (headerDesc) {
+                headerDesc.textContent = 'Australia\'s direct democracy movement. Create and sign official petitions, vote on proposals, take back control.';
+            }
+            
+            const filterTitle = document.querySelector('.filter-title');
+            if (filterTitle) filterTitle.textContent = 'Active Petitions';
+            
+            const sortSelect = document.getElementById('sort-select');
+            if (sortSelect) {
+                const options = sortSelect.querySelectorAll('option');
+                if (options[0]) options[0].textContent = 'Latest Petitions';
+                if (options[1]) options[1].textContent = 'Most Signatures';
+                if (options[2]) options[2].textContent = 'Most Debated';
+            }
+            
+            const proposalInput = document.getElementById('proposal-input');
+            if (proposalInput) {
+                proposalInput.placeholder = 'Your petition idea for Australia? (280 character limit)';
+            }
+            
+            const postButton = document.getElementById('post-button');
+            if (postButton) {
+                postButton.textContent = 'Create Petition';
+            }
+        }
+        
+        // Load user data
+        async function loadUserData() {
+            // User information (in a real app, this would come from authentication)
+            currentUser = JSON.parse(localStorage.getItem('radical_user'));
+            
+            // If no user exists, create a new one
+            if (!currentUser) {
+                currentUser = {
+                    id: 'citizen_' + Math.random().toString(36).substr(2, 9),
+                    name: 'Citizen ' + Math.floor(Math.random() * 9000 + 1000)
+                };
+                
+                // Save user to local storage
+                localStorage.setItem('radical_user', JSON.stringify(currentUser));
+            }
+            
+            // Create or get user in the database
+            try {
+                await createUser(currentUser);
+                console.log("User registration complete");
+            } catch (error) {
+                console.error("Failed to register user on page load");
+            }
+        }
+        
+        // Load verified users data
+        function loadVerifiedUsers() {
+            verifiedUsers = JSON.parse(localStorage.getItem('radical_verified_users')) || {};
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            const proposalInput = document.getElementById('proposal-input');
+            const charCounter = document.getElementById('char-counter');
+            const postButton = document.getElementById('post-button');
+            const sortSelect = document.getElementById('sort-select');
+            
+            // Rotate placeholder text every 5 seconds
+            let placeholderIndex = 0;
+            setInterval(() => {
+                if (proposalInput) {
+                    placeholderIndex = (placeholderIndex + 1) % placeholders.length;
+                    proposalInput.placeholder = placeholders[placeholderIndex];
+                }
+            }, 5000);
+            
+            // Update character counter
+            if (proposalInput) {
+                proposalInput.addEventListener('input', () => {
+                    const remaining = CHAR_LIMIT - proposalInput.value.length;
+                    charCounter.textContent = `${remaining} characters remaining`;
                     
-                    const response = await fetch(`${API_BASE_URL}/proposals`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            authorId: currentUser.id,
-                            text: text,
-                            trending: trending
-                        })
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error('Failed to create proposal');
+                    if (remaining < 20) {
+                        charCounter.classList.add('limit');
+                    } else {
+                        charCounter.classList.remove('limit');
                     }
                     
-                    // Clear input
-                    proposalInput.value = '';
-                    charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
-                    postButton.disabled = true;
-                    
-                    // Show success animation
-                    animatePostSuccess();
-                    
-                    // Refresh proposals
-                    fetchProposals();
-                } catch (error) {
-                    console.error('Error creating proposal:', error);
-                    showErrorMessage('Failed to post your proposal. Parliament might be onto us!');
-                }
+                    // Enable/disable post button
+                    postButton.disabled = proposalInput.value.trim().length === 0;
+                });
             }
-        });
+            
+            // Post new proposal
+            if (postButton) {
+                postButton.addEventListener('click', async () => {
+                    const text = proposalInput.value.trim();
+                    
+                    if (text) {
+                        try {
+                            const trending = Math.random() > 0.8; // Randomly mark some as trending for effect
+                            
+                            const response = await fetch(`${API_BASE_URL}/proposals`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    authorId: currentUser.id,
+                                    text: text,
+                                    trending: trending
+                                })
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error('Failed to create proposal');
+                            }
+                            
+                            // Clear input
+                            proposalInput.value = '';
+                            charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
+                            postButton.disabled = true;
+                            
+                            // Show success animation
+                            animatePostSuccess();
+                            
+                            // Refresh proposals
+                            fetchProposals();
+                        } catch (error) {
+                            console.error('Error creating proposal:', error);
+                            showErrorMessage('Failed to post your petition. Parliament might be onto us!');
+                        }
+                    }
+                });
+            }
+            
+            // Sort proposals when sort option changes
+            if (sortSelect) {
+                sortSelect.addEventListener('change', fetchProposals);
+            }
+        }
+        
+        // Create or get user in DB
+        async function createUser(user) {
+            try {
+                console.log("Creating user:", user); // Log the user data
+                
+                const response = await fetch(`${API_BASE_URL}/users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: user.id,
+                        name: user.name
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("User creation API error:", errorData);
+                    throw new Error('Failed to create user');
+                }
+                
+                const data = await response.json();
+                console.log("User creation successful:", data);
+                return data;
+            } catch (error) {
+                console.error('Error creating user:', error);
+                throw error;
+            }
+        }
         
         // Animation for successful post
         function animatePostSuccess() {
             const successEl = document.createElement('div');
-            successEl.textContent = '🔥 Take that, Parliament!';
+            successEl.textContent = '🔥 Petition created!';
             successEl.style.position = 'fixed';
             successEl.style.bottom = '20px';
             successEl.style.left = '50%';
@@ -686,26 +955,65 @@ window.addEventListener('DOMContentLoaded', async () => {
         
         // Show loading indicator
         function showLoadingIndicator() {
-            proposalsContainer.innerHTML = `
-                <div class="loading-indicator">
-                    <div class="loading-spinner"></div>
-                    <p>Loading democracy...</p>
-                </div>
-            `;
+            const proposalsContainer = document.getElementById('proposals-container');
+            if (proposalsContainer) {
+                proposalsContainer.innerHTML = `
+                    <div class="loading-indicator">
+                        <div class="loading-spinner"></div>
+                        <p>Loading petitions...</p>
+                    </div>
+                `;
+            }
         }
         
         // Show error message
         function showErrorMessage(message, isRetryable = true) {
-            proposalsContainer.innerHTML = `
-                <div class="error-state">
-                    <p>${message}</p>
-                    ${isRetryable ? '<button class="retry-button" onclick="fetchProposals()">Try Again</button>' : ''}
-                </div>
-            `;
+            const proposalsContainer = document.getElementById('proposals-container');
+            if (proposalsContainer) {
+                proposalsContainer.innerHTML = `
+                    <div class="error-state">
+                        <p>${message}</p>
+                        ${isRetryable ? '<button class="retry-button" onclick="fetchProposals()">Try Again</button>' : ''}
+                    </div>
+                `;
+            }
         }
         
-        // Sort proposals when sort option changes
-        sortSelect.addEventListener('change', fetchProposals);
+        // Show success/error toast message
+        function showToastMessage(message, backgroundColor) {
+            const toastEl = document.createElement('div');
+            toastEl.textContent = message;
+            toastEl.style.position = 'fixed';
+            toastEl.style.bottom = '20px';
+            toastEl.style.left = '50%';
+            toastEl.style.transform = 'translateX(-50%)';
+            toastEl.style.backgroundColor = backgroundColor;
+            toastEl.style.color = 'var(--dark)';
+            toastEl.style.padding = '12px 24px';
+            toastEl.style.borderRadius = '0';
+            toastEl.style.zIndex = '1000';
+            toastEl.style.boxShadow = `0 0 20px ${backgroundColor}99`;
+            toastEl.style.transition = 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+            toastEl.style.opacity = '0';
+            toastEl.style.fontSize = '14px';
+            toastEl.style.fontWeight = '700';
+            toastEl.style.fontFamily = "'Roboto Mono', monospace";
+            
+            document.body.appendChild(toastEl);
+            
+            // Fade in
+            setTimeout(() => {
+                toastEl.style.opacity = '1';
+            }, 100);
+            
+            // Fade out
+            setTimeout(() => {
+                toastEl.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(toastEl);
+                }, 500);
+            }, 3000);
+        }
         
         // Fetch proposals from API
         async function fetchProposals() {
@@ -713,7 +1021,8 @@ window.addEventListener('DOMContentLoaded', async () => {
                 // Show loading indicator
                 showLoadingIndicator();
                 
-                const sortBy = sortSelect.value;
+                const sortSelect = document.getElementById('sort-select');
+                const sortBy = sortSelect ? sortSelect.value : 'newest';
                 const response = await fetch(`${API_BASE_URL}/proposals?sortBy=${sortBy}&userId=${currentUser.id}`);
                 
                 if (!response.ok) {
@@ -724,24 +1033,58 @@ window.addEventListener('DOMContentLoaded', async () => {
                 renderProposals(proposals);
             } catch (error) {
                 console.error('Error fetching proposals:', error);
-                showErrorMessage('Oops! Failed to load proposals. Parliament might be censoring us already!');
+                showErrorMessage('Oops! Failed to load petitions. Parliament might be censoring us already!');
             }
         }
         
         // Handle voting
         async function handleVote(proposalId, voteType) {
+            currentProposalId = proposalId;
+            currentVoteType = voteType;
+
+            // Check if user needs to provide AEC details for petition signing
+            if (voteType === 'upvote') {
+                // Check if user already verified for this vote
+                if (verifiedUsers[currentUser.id] && verifiedUsers[currentUser.id][proposalId]) {
+                    // User already verified for this proposal, proceed with vote
+                    submitVote(proposalId, voteType, true, verifiedUsers[currentUser.id][proposalId].userData);
+                    return;
+                }
+
+                // Show verification modal for petition signing
+                showVerificationModal(proposalId);
+            } else {
+                // Downvotes don't require verification
+                submitVote(proposalId, voteType, false);
+            }
+        }
+        
+        // Submit vote with petition data if applicable
+        async function submitVote(proposalId, voteType, isPetition = false, petitionDetails = null) {
             try {
+                const voteData = {
+                    proposalId: proposalId,
+                    userId: currentUser.id,
+                    voteType: voteType
+                };
+                
+                // Add petition data if this is a petition signature
+                if (isPetition && petitionDetails) {
+                    voteData.isPetition = true;
+                    voteData.petitionDetails = petitionDetails;
+                }
+                
                 const response = await fetch(`${API_BASE_URL}/votes`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        proposalId: proposalId,
-                        userId: currentUser.id,
-                        voteType: voteType
-                    })
-                });
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(voteData),
+    mode: 'cors',
+    credentials: 'same-origin'
+});
+
+
                 
                 if (!response.ok) {
                     throw new Error('Failed to submit vote');
@@ -780,6 +1123,9 @@ window.addEventListener('DOMContentLoaded', async () => {
         
         // Render proposals
         function renderProposals(proposals) {
+            const proposalsContainer = document.getElementById('proposals-container');
+            if (!proposalsContainer) return;
+            
             // Clear container
             proposalsContainer.innerHTML = '';
             
@@ -787,7 +1133,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             if (!proposals || proposals.length === 0) {
                 proposalsContainer.innerHTML = `
                     <div class="empty-state">
-                        <p>No proposals yet. Be the first to drop your hot take!</p>
+                        <p>No petitions yet. Be the first to create one!</p>
                     </div>
                 `;
                 return;
@@ -803,22 +1149,31 @@ window.addEventListener('DOMContentLoaded', async () => {
                 
                 // Badge for trending or power proposals
                 const badgeHtml = proposal.trending ? 
-                    `<div class="power-badge trending-badge">🔥 Based</div>` : 
-                    (netVotes > 5 ? `<div class="power-badge">💯 Vibing</div>` : '');
+                    `<div class="power-badge trending-badge">🔥 Trending</div>` : 
+                    (netVotes > 5 ? `<div class="power-badge">💯 Popular</div>` : '');
+                
+                // Add petition signatures info if proposal has upvotes/signatures
+                const petitionInfo = proposal.upvotes > 0 ? 
+                    `<div class="petition-info">
+                        <span class="petition-icon">✓</span>
+                        <span class="petition-count">${proposal.petition_signatures || proposal.upvotes}</span>
+                        <span>verified signatures</span>
+                    </div>` : '';
                 
                 proposalCard.innerHTML = `
                     ${badgeHtml}
                     <div class="proposal-author">${proposal.author_name}</div>
                     <div class="proposal-text">${proposal.text}</div>
+                    ${petitionInfo}
                     <div class="proposal-stats">
                         <div class="vote-buttons">
                             <button class="vote-button ${proposal.userVote === 'upvote' ? 'upvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="upvote">
-                                <span class="vote-icon">↑</span>
-                                <span class="vote-count">${proposal.upvotes}</span>
+                                <span class="vote-icon">✓</span>
+                                <span>Sign</span>
                             </button>
                             <button class="vote-button ${proposal.userVote === 'downvote' ? 'downvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="downvote">
-                                <span class="vote-icon">↓</span>
-                                <span class="vote-count">${proposal.downvotes}</span>
+                                <span class="vote-icon">✕</span>
+                                <span>Oppose</span>
                             </button>
                             <span class="net-votes ${voteClass}">${netVotes > 0 ? '+' : ''}${netVotes}</span>
                         </div>
@@ -832,18 +1187,254 @@ window.addEventListener('DOMContentLoaded', async () => {
                 const upvoteButton = proposalCard.querySelector('[data-vote-type="upvote"]');
                 const downvoteButton = proposalCard.querySelector('[data-vote-type="downvote"]');
                 
-                upvoteButton.addEventListener('click', () => {
-                    handleVote(proposal.id, 'upvote');
-                });
+                if (upvoteButton) {
+                    upvoteButton.addEventListener('click', () => {
+                        handleVote(proposal.id, 'upvote');
+                    });
+                }
                 
-                downvoteButton.addEventListener('click', () => {
-                    handleVote(proposal.id, 'downvote');
-                });
+                if (downvoteButton) {
+                    downvoteButton.addEventListener('click', () => {
+                        handleVote(proposal.id, 'downvote');
+                    });
+                }
             });
         }
         
-        // Initial load of proposals
-        fetchProposals();
+        // Display the modal for petition verification
+        function showVerificationModal(proposalId) {
+            // Create the modal element
+            const modalOverlay = document.createElement('div');
+            modalOverlay.className = 'modal-overlay';
+
+            const modalContainer = document.createElement('div');
+            modalContainer.className = 'modal-container';
+
+            // Modal header
+            const modalHeader = document.createElement('div');
+            modalHeader.className = 'modal-header';
+            
+            const modalTitle = document.createElement('h3');
+            modalTitle.textContent = 'Sign Official Petition';
+            
+            const closeButton = document.createElement('button');
+            closeButton.className = 'modal-close';
+            closeButton.textContent = '✕';
+            closeButton.setAttribute('aria-label', 'Close modal');
+            
+            modalHeader.appendChild(modalTitle);
+            modalHeader.appendChild(closeButton);
+
+            // Modal body
+            const modalBody = document.createElement('div');
+            modalBody.className = 'modal-body';
+            
+            // Find the proposal text to display in the modal
+            const proposalCard = document.querySelector(`[data-proposal-id="${proposalId}"]`).closest('.proposal-card');
+            const proposalText = proposalCard.querySelector('.proposal-text').textContent;
+            
+            // Current proposal context
+            const petitionContext = document.createElement('p');
+            petitionContext.innerHTML = `<strong>You are officially petitioning for:</strong> 
+                <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); font-style: italic;">"${proposalText}"</div>
+                <strong>Your details will be verified with the Australian Electoral Commission (AEC).</strong>`;
+            
+            const formElement = document.createElement('form');
+            formElement.className = 'petition-form';
+            
+            // Form fields
+            const fields = [
+                { id: 'full-name', label: 'Full Name (as registered with AEC)', type: 'text', required: true },
+                { id: 'address', label: 'Residential Address', type: 'text', required: true },
+                { id: 'postcode', label: 'Postcode', type: 'text', required: true, pattern: '\\d{4}' },
+                { id: 'dob', label: 'Date of Birth', type: 'date', required: true },
+                { id: 'email', label: 'Email Address', type: 'email', required: true }
+            ];
+            
+            fields.forEach(field => {
+                const formGroup = document.createElement('div');
+                formGroup.className = 'form-group';
+                
+                const label = document.createElement('label');
+                label.setAttribute('for', field.id);
+                label.textContent = field.label;
+                
+                const input = document.createElement('input');
+                input.className = 'form-input';
+                input.id = field.id;
+                input.type = field.type;
+                input.required = field.required;
+                
+                if (field.pattern) {
+                    input.pattern = field.pattern;
+                }
+                
+                const errorSpan = document.createElement('span');
+                errorSpan.className = 'form-error';
+                errorSpan.id = `${field.id}-error`;
+                
+                formGroup.appendChild(label);
+                formGroup.appendChild(input);
+                formGroup.appendChild(errorSpan);
+                
+                formElement.appendChild(formGroup);
+            });
+            
+            // Consent checkbox
+            const consentDiv = document.createElement('div');
+            consentDiv.className = 'consent-checkbox';
+            
+            const consentCheckbox = document.createElement('input');
+            consentCheckbox.type = 'checkbox';
+            consentCheckbox.id = 'petition-consent';
+            consentCheckbox.required = true;
+            
+            const consentLabel = document.createElement('label');
+            consentLabel.setAttribute('for', 'petition-consent');
+            consentLabel.innerHTML = 'I certify that I am an Australian citizen or eligible resident, registered to vote, and consent to my information being used for this official petition.';
+            
+            consentDiv.appendChild(consentCheckbox);
+            consentDiv.appendChild(consentLabel);
+            
+            formElement.appendChild(consentDiv);
+            
+            // Legal info
+            const infoText = document.createElement('p');
+            infoText.className = 'info-text';
+            infoText.textContent = 'Your details will be verified with the AEC database. A valid petition requires accurate information matching your electoral enrollment. Multiple signatures from the same person are prohibited.';
+            
+            formElement.appendChild(infoText);
+            
+            // Submit button
+            const submitButton = document.createElement('button');
+            submitButton.type = 'submit';
+            submitButton.className = 'petition-submit-btn';
+            submitButton.textContent = 'Sign Petition';
+            submitButton.disabled = true;
+            
+            formElement.appendChild(submitButton);
+            
+            modalBody.appendChild(petitionContext);
+            modalBody.appendChild(formElement);
+            
+            modalContainer.appendChild(modalHeader);
+            modalContainer.appendChild(modalBody);
+            
+            modalOverlay.appendChild(modalContainer);
+            document.body.appendChild(modalOverlay);
+            
+            // Form validation
+            const inputs = formElement.querySelectorAll('input:not([type="checkbox"])');
+            const checkValidation = () => {
+                let isValid = true;
+                
+                inputs.forEach(input => {
+                    if (!input.validity.valid) {
+                        isValid = false;
+                    }
+                });
+                
+                if (!consentCheckbox.checked) {
+                    isValid = false;
+                }
+                
+                submitButton.disabled = !isValid;
+            };
+            
+            inputs.forEach(input => {
+                input.addEventListener('input', checkValidation);
+                
+                // Show specific error messages
+                input.addEventListener('invalid', (e) => {
+                    e.preventDefault();
+                    const errorSpan = document.getElementById(`${input.id}-error`);
+                    if (input.validity.valueMissing) {
+                        errorSpan.textContent = 'This field is required';
+                    } else if (input.validity.patternMismatch && input.id === 'postcode') {
+                        errorSpan.textContent = 'Please enter a valid 4-digit postcode';
+                    } else if (input.validity.typeMismatch && input.type === 'email') {
+                        errorSpan.textContent = 'Please enter a valid email address';
+                    } else {
+                        errorSpan.textContent = 'Please enter valid information';
+                    }
+                });
+            });
+            
+            consentCheckbox.addEventListener('change', checkValidation);
+            
+            // Close button functionality
+            closeButton.addEventListener('click', () => {
+                document.body.removeChild(modalOverlay);
+            });
+            
+            // Form submission
+            formElement.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Show loading state
+                submitButton.disabled = true;
+                submitButton.textContent = 'Verifying...';
+                
+                // Collect form data
+                const formData = {
+                    fullName: document.getElementById('full-name').value,
+                    address: document.getElementById('address').value,
+                    postcode: document.getElementById('postcode').value,
+                    dob: document.getElementById('dob').value,
+                    email: document.getElementById('email').value,
+                    consent: document.getElementById('petition-consent').checked
+                };
+                
+                // Verify with AEC (simulated)
+                await verifyWithAEC(formData, proposalId);
+            });
+        }
+        
+        // Verify user details with AEC (simulated)
+        async function verifyWithAEC(userData, proposalId) {
+            try {
+                // Show loading state with timeout to simulate verification
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // In a real implementation, this would call your server which would verify with AEC APIs
+                // For demo purposes, we'll simulate a successful verification
+                
+                // Store the verified state
+                if (!verifiedUsers[currentUser.id]) {
+                    verifiedUsers[currentUser.id] = {};
+                }
+                
+                // Mark this user as verified for this proposal
+                verifiedUsers[currentUser.id][proposalId] = {
+                    verified: true,
+                    timestamp: Date.now(),
+                    userData: userData
+                };
+                
+                // Save verification data to localStorage (in real app, this would be in your database)
+                localStorage.setItem('radical_verified_users', JSON.stringify(verifiedUsers));
+                
+                // Remove the modal
+                const modal = document.querySelector('.modal-overlay');
+                document.body.removeChild(modal);
+                
+                // Show success message
+                showToastMessage('✓ Petition signed successfully!', '#11cc77');
+                
+                // Finally submit the vote with petition details
+                submitVote(proposalId, currentVoteType, true, userData);
+            } catch (error) {
+                console.error('Verification error:', error);
+                showToastMessage('⚠️ Verification failed. Please try again.', '#ff0099');
+                
+                // Reset the form
+                const submitButton = document.querySelector('.petition-submit-btn');
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Sign Petition';
+                }
+            }
+        }
     </script>
 </body>
 </html>
