@@ -247,7 +247,7 @@
         }
         
         .proposal-text {
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             word-wrap: break-word;
             font-size: 1.1rem;
             line-height: 1.7;
@@ -626,6 +626,120 @@
             padding-left: 10px;
         }
         
+        /* Meme Upload Styles */
+        .meme-upload {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid var(--border);
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        .meme-upload-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background-color: var(--darker);
+            padding: 10px 15px;
+            border: 1px dashed var(--border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .meme-upload-label:hover {
+            border-color: var(--primary);
+            background-color: rgba(255, 0, 153, 0.1);
+        }
+        
+        .meme-upload-input {
+            display: none;
+        }
+        
+        .meme-upload-icon {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+        
+        .meme-upload-text {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        
+        .meme-preview {
+            width: 100%;
+            max-height: 300px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border);
+            background-color: var(--darker);
+            margin-top: 15px;
+            padding: 10px;
+        }
+        
+        .meme-preview img {
+            max-width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            margin: 10px 0;
+        }
+        
+        .meme-remove {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: var(--light);
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .meme-remove:hover {
+            background-color: var(--primary);
+        }
+        
+        .meme-upload-progress {
+            margin-top: 10px;
+            height: 6px;
+            width: 100%;
+            background-color: var(--darker);
+            overflow: hidden;
+            border-radius: 3px;
+        }
+        
+        .meme-upload-progress-bar {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0;
+            transition: width 0.3s ease;
+        }
+        
+        .proposal-meme {
+            margin: 15px 0;
+            border: 1px solid var(--border);
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        
+        .proposal-meme img {
+            max-width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            display: inline-block;
+        }
+        
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
@@ -650,117 +764,8 @@
                 max-height: 90vh;
                 overflow-y: auto;
             }
-
-            /* Meme Upload Styles */
-.meme-upload {
-  margin-top: 15px;
-  margin-bottom: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.meme-upload-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  background-color: var(--darker);
-  padding: 10px 15px;
-  border: 1px dashed var(--border);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.meme-upload-label:hover {
-  border-color: var(--primary);
-  background-color: rgba(255, 0, 153, 0.1);
-}
-
-.meme-upload-input {
-  display: none;
-}
-
-.meme-upload-icon {
-  color: var(--primary);
-  font-size: 1.5rem;
-}
-
-.meme-upload-text {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-
-.meme-preview {
-  width: 100%;
-  max-height: 300px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  position: relative;
-  border: 1px solid var(--border);
-  background-color: var(--darker);
-}
-
-.meme-preview img {
-  max-width: 100%;
-  max-height: 300px;
-  object-fit: contain;
-}
-
-.meme-remove {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: var(--light);
-  border: none;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-
-.meme-remove:hover {
-  background-color: var(--primary);
-}
-
-.meme-upload-progress {
-  height: 4px;
-  width: 100%;
-  background-color: var(--darker);
-  overflow: hidden;
-}
-
-.meme-upload-progress-bar {
-  height: 100%;
-  background-color: var(--primary);
-  width: 0;
-  transition: width 0.3s ease;
-}
-
-.proposal-meme {
-  margin-top: 15px;
-  margin-bottom: 15px;
-  border: 1px solid var(--border);
-  padding: 0;
-  overflow: hidden;
-}
-
-.proposal-meme img {
-  width: 100%;
-  max-height: 300px;
-  object-fit: contain;
-  display: block;
-}
-
         }
-    </style>
+        </style>
     </head>
     <body>
         <div class="container">
@@ -838,8 +843,8 @@
         document.addEventListener('DOMContentLoaded', async () => {
             // Initialize variables for DOM elements
             initializeApp();
-              // Initialize meme upload
-  initMemeUpload();
+            // Initialize meme upload
+            initMemeUpload();
         });
         
         // Initialize application
@@ -953,54 +958,10 @@
                     // Enable/disable post button
                     postButton.disabled = proposalInput.value.trim().length === 0;
                 });
-            }
-            
-            // Post new proposal
-            if (postButton) {
-                postButton.addEventListener('click', async () => {
-                    const text = proposalInput.value.trim();
-                    
-                    if (text) {
-                        try {
-                            const trending = Math.random() > 0.8; // Randomly mark some as trending for effect
-                            
-                            const response = await fetch(`${API_BASE_URL}/proposals`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    authorId: currentUser.id,
-                                    text: text,
-                                    trending: trending
-                                })
-                            });
-                            
-                            if (!response.ok) {
-                                throw new Error('Failed to create proposal');
-                            }
-                            
-                            // Clear input
-                            proposalInput.value = '';
-                            charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
-                            postButton.disabled = true;
-                            
-                            // Show success animation
-                            animatePostSuccess();
-                            
-                            // Refresh proposals
-                            fetchProposals();
-                        } catch (error) {
-                            console.error('Error creating proposal:', error);
-                            showErrorMessage('Failed to post your petition. Parliament might be onto us!');
-                        }
-                    }
-                });
-            }
-            
-            // Sort proposals when sort option changes
-            if (sortSelect) {
-                sortSelect.addEventListener('change', fetchProposals);
+                // Sort proposals when sort option changes
+                if (sortSelect) {
+                    sortSelect.addEventListener('change', fetchProposals);
+                }
             }
         }
         
@@ -1193,16 +1154,14 @@
                 }
                 
                 const response = await fetch(`${API_BASE_URL}/votes`, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(voteData),
-    mode: 'cors',
-    credentials: 'same-origin'
-});
-
-
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(voteData),
+                    mode: 'cors',
+                    credentials: 'same-origin'
+                });
                 
                 if (!response.ok) {
                     throw new Error('Failed to submit vote');
@@ -1239,7 +1198,7 @@
             }
         }
         
-        // Render proposals
+        // Render proposals - FIXED VERSION
         function renderProposals(proposals) {
             const proposalsContainer = document.getElementById('proposals-container');
             if (!proposalsContainer) return;
@@ -1277,16 +1236,18 @@
                         <span class="petition-count">${proposal.petition_signatures || proposal.upvotes}</span>
                         <span>verified signatures</span>
                     </div>` : '';
-
-                    const memeHtml = proposal.meme_url ? 
-      `<div class="proposal-meme">
-        <img src="${proposal.meme_url}" alt="Meme for petition" />
-      </div>` : '';
+                
+                // Add meme if available - FIXED: This is now correctly included in the layout
+                const memeHtml = proposal.meme_url ? 
+                    `<div class="proposal-meme">
+                        <img src="${proposal.meme_url}" alt="Meme for petition" onerror="this.style.display='none'" />
+                    </div>` : '';
                 
                 proposalCard.innerHTML = `
                     ${badgeHtml}
                     <div class="proposal-author">${proposal.author_name}</div>
                     <div class="proposal-text">${proposal.text}</div>
+                    ${memeHtml}
                     ${petitionInfo}
                     <div class="proposal-stats">
                         <div class="vote-buttons">
@@ -1324,246 +1285,246 @@
             });
         }
 
+        // Create meme upload elements
         function createMemeUpload() {
-  const uploadContainer = document.createElement('div');
-  uploadContainer.className = 'meme-upload';
-  
-  const uploadLabel = document.createElement('label');
-  uploadLabel.className = 'meme-upload-label';
-  uploadLabel.setAttribute('for', 'meme-upload-input');
-  
-  const uploadIcon = document.createElement('span');
-  uploadIcon.className = 'meme-upload-icon';
-  uploadIcon.textContent = '🖼️';
-  
-  const uploadText = document.createElement('span');
-  uploadText.className = 'meme-upload-text';
-  uploadText.textContent = 'Add a meme to your petition (optional)';
-  
-  const uploadInput = document.createElement('input');
-  uploadInput.className = 'meme-upload-input';
-  uploadInput.id = 'meme-upload-input';
-  uploadInput.type = 'file';
-  uploadInput.accept = 'image/jpeg, image/png, image/gif, image/webp';
-  
-  uploadLabel.appendChild(uploadIcon);
-  uploadLabel.appendChild(uploadText);
-  uploadLabel.appendChild(uploadInput);
-  
-  uploadContainer.appendChild(uploadLabel);
-  
-  const previewContainer = document.createElement('div');
-  previewContainer.className = 'meme-preview';
-  previewContainer.style.display = 'none';
-  
-  const previewImage = document.createElement('img');
-  previewImage.id = 'meme-preview-image';
-  
-  const removeButton = document.createElement('button');
-  removeButton.className = 'meme-remove';
-  removeButton.innerHTML = '×';
-  removeButton.setAttribute('aria-label', 'Remove meme');
-  
-  const progressContainer = document.createElement('div');
-  progressContainer.className = 'meme-upload-progress';
-  progressContainer.style.display = 'none';
-  
-  const progressBar = document.createElement('div');
-  progressBar.className = 'meme-upload-progress-bar';
-  
-  progressContainer.appendChild(progressBar);
-  previewContainer.appendChild(previewImage);
-  previewContainer.appendChild(removeButton);
-  
-  uploadContainer.appendChild(previewContainer);
-  uploadContainer.appendChild(progressContainer);
-  
-  return {
-    container: uploadContainer,
-    input: uploadInput,
-    preview: previewContainer,
-    image: previewImage,
-    removeBtn: removeButton,
-    progress: progressContainer,
-    progressBar: progressBar
-  };
-}
+            const uploadContainer = document.createElement('div');
+            uploadContainer.className = 'meme-upload';
+            
+            const uploadLabel = document.createElement('label');
+            uploadLabel.className = 'meme-upload-label';
+            uploadLabel.setAttribute('for', 'meme-upload-input');
+            
+            const uploadIcon = document.createElement('span');
+            uploadIcon.className = 'meme-upload-icon';
+            uploadIcon.textContent = '🖼️';
+            
+            const uploadText = document.createElement('span');
+            uploadText.className = 'meme-upload-text';
+            uploadText.textContent = 'Add a meme to your petition (optional)';
+            
+            const uploadInput = document.createElement('input');
+            uploadInput.className = 'meme-upload-input';
+            uploadInput.id = 'meme-upload-input';
+            uploadInput.type = 'file';
+            uploadInput.accept = 'image/jpeg, image/png, image/gif, image/webp';
+            
+            uploadLabel.appendChild(uploadIcon);
+            uploadLabel.appendChild(uploadText);
+            uploadLabel.appendChild(uploadInput);
+            
+            uploadContainer.appendChild(uploadLabel);
+            
+            const previewContainer = document.createElement('div');
+            previewContainer.className = 'meme-preview';
+            previewContainer.style.display = 'none';
+            
+            const previewImage = document.createElement('img');
+            previewImage.id = 'meme-preview-image';
+            
+            const removeButton = document.createElement('button');
+            removeButton.className = 'meme-remove';
+            removeButton.innerHTML = '×';
+            removeButton.setAttribute('aria-label', 'Remove meme');
+            
+            const progressContainer = document.createElement('div');
+            progressContainer.className = 'meme-upload-progress';
+            progressContainer.style.display = 'none';
+            
+            const progressBar = document.createElement('div');
+            progressBar.className = 'meme-upload-progress-bar';
+            
+            progressContainer.appendChild(progressBar);
+            previewContainer.appendChild(previewImage);
+            previewContainer.appendChild(removeButton);
+            
+            uploadContainer.appendChild(previewContainer);
+            uploadContainer.appendChild(progressContainer);
+            
+            return {
+                container: uploadContainer,
+                input: uploadInput,
+                preview: previewContainer,
+                image: previewImage,
+                removeBtn: removeButton,
+                progress: progressContainer,
+                progressBar: progressBar
+            };
+        }
 
-// Initialize meme upload
-function initMemeUpload() {
-  const newProposalSection = document.querySelector('.new-proposal');
-  if (!newProposalSection) return;
-  
-  const charCounter = document.getElementById('char-counter');
-  if (!charCounter) return;
-  
-  // Create meme upload elements
-  const memeUpload = createMemeUpload();
-  
-  // Insert after character counter, before post button
-  charCounter.after(memeUpload.container);
-  
-  // Variable to store the selected file
-  let selectedMeme = null;
-  
-  // Handle file selection
-  memeUpload.input.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      showToastMessage('⚠️ Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.', '#ff0099');
-      return;
-    }
-    
-    // Validate file size (limit to 2MB)
-    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-    if (file.size > MAX_SIZE) {
-      showToastMessage('⚠️ File too large. Maximum size is 2MB.', '#ff0099');
-      return;
-    }
-    
-    // Store the file
-    selectedMeme = file;
-    
-    // Show preview
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      memeUpload.image.src = event.target.result;
-      memeUpload.preview.style.display = 'flex';
-    };
-    reader.readAsDataURL(file);
-  });
-  
-  // Handle remove button
-  memeUpload.removeBtn.addEventListener('click', () => {
-    selectedMeme = null;
-    memeUpload.input.value = '';
-    memeUpload.preview.style.display = 'none';
-    memeUpload.image.src = '';
-  });
-  
-  // Modify post button click handler to include meme upload
-  const postButton = document.getElementById('post-button');
-  if (postButton) {
-    // Store the original click event handler
-    const originalClickHandler = postButton.onclick;
-    
-    // Remove the original handler
-    postButton.onclick = null;
-    
-    // Add new handler
-    postButton.addEventListener('click', async () => {
-      const proposalInput = document.getElementById('proposal-input');
-      const text = proposalInput?.value.trim();
-      
-      if (text) {
-        try {
-          const trending = Math.random() > 0.8; // Randomly mark some as trending
-          
-          // Create the proposal first
-          const createResponse = await fetch(`${API_BASE_URL}/proposals`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              authorId: currentUser.id,
-              text: text,
-              trending: trending
-            })
-          });
-          
-          if (!createResponse.ok) {
-            throw new Error('Failed to create proposal');
-          }
-          
-          const proposalData = await createResponse.json();
-          const proposalId = proposalData.id;
-          
-          // If there's a meme, upload it
-          if (selectedMeme) {
-            // Show progress bar
-            memeUpload.progress.style.display = 'block';
-            memeUpload.progressBar.style.width = '0%';
+        // Initialize meme upload
+        function initMemeUpload() {
+            const newProposalSection = document.querySelector('.new-proposal');
+            if (!newProposalSection) return;
             
-            // Create form data for file upload
-            const formData = new FormData();
-            formData.append('proposalId', proposalId);
-            formData.append('meme', selectedMeme);
+            const charCounter = document.getElementById('char-counter');
+            if (!charCounter) return;
             
-            // Track upload progress
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', `${API_BASE_URL}/memes`);
+            // Create meme upload elements
+            const memeUpload = createMemeUpload();
             
-            xhr.upload.addEventListener('progress', (event) => {
-              if (event.lengthComputable) {
-                const percent = (event.loaded / event.total) * 100;
-                memeUpload.progressBar.style.width = percent + '%';
-              }
+            // Insert after character counter, before post button
+            charCounter.after(memeUpload.container);
+            
+            // Variable to store the selected file
+            let selectedMeme = null;
+            
+            // Handle file selection
+            memeUpload.input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    showToastMessage('⚠️ Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.', '#ff0099');
+                    return;
+                }
+                
+                // Validate file size (limit to 2MB)
+                const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+                if (file.size > MAX_SIZE) {
+                    showToastMessage('⚠️ File too large. Maximum size is 2MB.', '#ff0099');
+                    return;
+                }
+                
+                // Store the file
+                selectedMeme = file;
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    memeUpload.image.src = event.target.result;
+                    memeUpload.preview.style.display = 'flex';
+                };
+                reader.readAsDataURL(file);
             });
             
-            xhr.addEventListener('load', () => {
-              if (xhr.status >= 200 && xhr.status < 300) {
-                // Upload successful
-                memeUpload.progress.style.display = 'none';
-                
-                // Clear the meme upload
+            // Handle remove button
+            memeUpload.removeBtn.addEventListener('click', () => {
                 selectedMeme = null;
                 memeUpload.input.value = '';
                 memeUpload.preview.style.display = 'none';
                 memeUpload.image.src = '';
-                
-                // Show success message
-                animatePostSuccess();
-                
-                // Clear input
-                proposalInput.value = '';
-                charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
-                postButton.disabled = true;
-                
-                // Refresh proposals
-                fetchProposals();
-              } else {
-                // Upload failed
-                memeUpload.progress.style.display = 'none';
-                console.error('Meme upload failed:', xhr.responseText);
-                showErrorMessage('Failed to upload meme. Please try again.');
-              }
             });
             
-            xhr.addEventListener('error', () => {
-              memeUpload.progress.style.display = 'none';
-              console.error('Meme upload network error');
-              showErrorMessage('Failed to upload meme. Please check your connection.');
-            });
-            
-            // Send the upload
-            xhr.send(formData);
-          } else {
-            // No meme to upload, just show success and refresh
-            // Clear input
-            proposalInput.value = '';
-            charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
-            postButton.disabled = true;
-            
-            // Show success animation
-            animatePostSuccess();
-            
-            // Refresh proposals
-            fetchProposals();
-          }
-        } catch (error) {
-          console.error('Error creating proposal:', error);
-          showErrorMessage('Failed to post your petition. Parliament might be onto us!');
+            // Modify post button click handler to include meme upload
+            const postButton = document.getElementById('post-button');
+            if (postButton) {
+                // Store the original click event handler
+                const originalClickHandler = postButton.onclick;
+                
+                // Remove the original handler
+                postButton.onclick = null;
+                
+                // Add new handler
+                postButton.addEventListener('click', async () => {
+                    const proposalInput = document.getElementById('proposal-input');
+                    const text = proposalInput?.value.trim();
+                    
+                    if (text) {
+                        try {
+                            const trending = Math.random() > 0.8; // Randomly mark some as trending
+                            
+                            // Create the proposal first
+                            const createResponse = await fetch(`${API_BASE_URL}/proposals`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    authorId: currentUser.id,
+                                    text: text,
+                                    trending: trending
+                                })
+                            });
+                            
+                            if (!createResponse.ok) {
+                                throw new Error('Failed to create proposal');
+                            }
+                            
+                            const proposalData = await createResponse.json();
+                            const proposalId = proposalData.id;
+                            
+                            // If there's a meme, upload it
+                            if (selectedMeme) {
+                                // Show progress bar
+                                memeUpload.progress.style.display = 'block';
+                                memeUpload.progressBar.style.width = '0%';
+                                
+                                // Create form data for file upload
+                                const formData = new FormData();
+                                formData.append('proposalId', proposalId);
+                                formData.append('meme', selectedMeme);
+                                
+                                // Track upload progress
+                                const xhr = new XMLHttpRequest();
+                                xhr.open('POST', `${API_BASE_URL}/memes`);
+                                
+                                xhr.upload.addEventListener('progress', (event) => {
+                                    if (event.lengthComputable) {
+                                        const percent = (event.loaded / event.total) * 100;
+                                        memeUpload.progressBar.style.width = percent + '%';
+                                    }
+                                });
+                                
+                                xhr.addEventListener('load', () => {
+                                    if (xhr.status >= 200 && xhr.status < 300) {
+                                        // Upload successful
+                                        memeUpload.progress.style.display = 'none';
+                                        
+                                        // Clear the meme upload
+                                        selectedMeme = null;
+                                        memeUpload.input.value = '';
+                                        memeUpload.preview.style.display = 'none';
+                                        memeUpload.image.src = '';
+                                        
+                                        // Show success message
+                                        animatePostSuccess();
+                                        
+                                        // Clear input
+                                        proposalInput.value = '';
+                                        charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
+                                        postButton.disabled = true;
+                                        
+                                        // Refresh proposals
+                                        fetchProposals();
+                                    } else {
+                                        // Upload failed
+                                        memeUpload.progress.style.display = 'none';
+                                        console.error('Meme upload failed:', xhr.responseText);
+                                        showToastMessage('Failed to upload meme. Please try again.', '#ff0099');
+                                    }
+                                });
+                                
+                                xhr.addEventListener('error', () => {
+                                    memeUpload.progress.style.display = 'none';
+                                    console.error('Meme upload network error');
+                                    showToastMessage('Failed to upload meme. Please check your connection.', '#ff0099');
+                                });
+                                
+                                // Send the upload
+                                xhr.send(formData);
+                            } else {
+                                // No meme to upload, just show success and refresh
+                                // Clear input
+                                proposalInput.value = '';
+                                charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
+                                postButton.disabled = true;
+                                
+                                // Show success animation
+                                animatePostSuccess();
+                                
+                                // Refresh proposals
+                                fetchProposals();
+                            }
+                        } catch (error) {
+                            console.error('Error creating proposal:', error);
+                            showErrorMessage('Failed to post your petition. Parliament might be onto us!');
+                        }
+                    }
+                });
+            }
         }
-      }
-    });
-  }
-}
-
         
         // Display the modal for petition verification
         function showVerificationModal(proposalId) {
@@ -1775,8 +1736,8 @@ function initMemeUpload() {
                     userData: userData
                 };
                 
-                // Save verification data to localStorage (in real app, this would be in your database)
-                localStorage.setItem('radical_verified_users', JSON.stringify(verifiedUsers));
+               // Save verification data to localStorage (in real app, this would be in your database)
+               localStorage.setItem('radical_verified_users', JSON.stringify(verifiedUsers));
                 
                 // Remove the modal
                 const modal = document.querySelector('.modal-overlay');
@@ -1799,6 +1760,6 @@ function initMemeUpload() {
                 }
             }
         }
-    </script>
+        </script>
     </body>
 </html>
