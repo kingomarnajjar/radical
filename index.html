@@ -764,6 +764,150 @@
                 max-height: 90vh;
                 overflow-y: auto;
             }
+
+            /* Add these styles to your existing CSS */
+
+.share-button {
+    background: var(--darker);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    transition: all 0.2s ease;
+    padding: 6px 10px;
+    border-radius: 0;
+    margin-left: 10px;
+    font-family: 'Roboto Mono', monospace;
+}
+
+.share-button:hover {
+    background-color: var(--darker);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.share-icon {
+    font-size: 14px;
+}
+
+/* Optional: Add a tooltip for the share button */
+.share-button {
+    position: relative;
+}
+
+.share-button::after {
+    content: 'Copy link';
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: var(--dark);
+    padding: 4px 8px;
+    font-size: 10px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+
+.share-button:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+.share-button.copied::after {
+    content: 'Copied!';
+}
+
+/* Styles for the proposal view modal */
+.modal-container.proposal-view {
+    max-width: 600px;
+}
+
+.modal-body .proposal-text {
+    font-size: 1.3rem;
+    margin: 20px 0;
+    line-height: 1.7;
+}
+
+.share-link-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.share-link-field {
+    flex: 1;
+    padding: 12px;
+    background-color: var(--darker);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 14px;
+    font-family: 'Roboto Mono', monospace;
+    cursor: text;
+}
+
+.share-copy-button {
+    background-color: var(--primary);
+    color: var(--dark);
+    border: none;
+    padding: 0 15px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    font-family: 'Roboto Mono', monospace;
+}
+
+.share-copy-button:hover {
+    background-color: var(--primary-light);
+}
+
+/* Social share buttons */
+.social-share-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.social-share-button {
+    background-color: var(--darker);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.social-share-button:hover {
+    background-color: var(--primary);
+    color: var(--dark);
+    border-color: var(--primary);
+}
+
+.social-icon {
+    font-size: 16px;
+}
+
+/* Animation for copying */
+@keyframes copyFlash {
+    0% { background-color: var(--primary); }
+    100% { background-color: var(--darker); }
+}
+
+.flash-animation {
+    animation: copyFlash 0.5s;
+}
         }
         </style>
     </head>
@@ -849,21 +993,24 @@
         
         // Initialize application
         async function initializeApp() {
-            // Update UI elements
-            updateUIText();
-            
-            // Load user information
-            await loadUserData();
-            
-            // Load verified users data
-            loadVerifiedUsers();
-            
-            // Setup event listeners
-            setupEventListeners();
-            
-            // Initial load of proposals
-            fetchProposals();
-        }
+  // Update UI elements
+  updateUIText();
+  
+  // Load user information
+  await loadUserData();
+  
+  // Load verified users data
+  loadVerifiedUsers();
+  
+  // Setup event listeners
+  setupEventListeners();
+  
+  // Initial load of proposals
+  fetchProposals();
+  
+  // Check for proposal in URL
+  checkForProposalInUrl();
+}
         
         // Update UI text for petition system
         function updateUIText() {
@@ -1200,90 +1347,101 @@
         
         // Render proposals - FIXED VERSION
         function renderProposals(proposals) {
-            const proposalsContainer = document.getElementById('proposals-container');
-            if (!proposalsContainer) return;
-            
-            // Clear container
-            proposalsContainer.innerHTML = '';
-            
-            // Show empty state if no proposals
-            if (!proposals || proposals.length === 0) {
-                proposalsContainer.innerHTML = `
-                    <div class="empty-state">
-                        <p>No petitions yet. Be the first to create one!</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Render each proposal
-            proposals.forEach(proposal => {
-                const netVotes = proposal.upvotes - proposal.downvotes;
-                const voteClass = netVotes > 0 ? 'positive' : netVotes < 0 ? 'negative' : '';
-                
-                const proposalCard = document.createElement('div');
-                proposalCard.className = 'proposal-card';
-                
-                // Badge for trending or power proposals
-                const badgeHtml = proposal.trending ? 
-                    `<div class="power-badge trending-badge">🔥 Trending</div>` : 
-                    (netVotes > 5 ? `<div class="power-badge">💯 Popular</div>` : '');
-                
-                // Add petition signatures info if proposal has upvotes/signatures
-                const petitionInfo = proposal.upvotes > 0 ? 
-                    `<div class="petition-info">
-                        <span class="petition-icon">✓</span>
-                        <span class="petition-count">${proposal.petition_signatures || proposal.upvotes}</span>
-                        <span>verified signatures</span>
-                    </div>` : '';
-                
-                // Add meme if available - FIXED: This is now correctly included in the layout
-                const memeHtml = proposal.meme_url ? 
-                    `<div class="proposal-meme">
-                        <img src="${proposal.meme_url}" alt="Meme for petition" onerror="this.style.display='none'" />
-                    </div>` : '';
-                
-                proposalCard.innerHTML = `
-                    ${badgeHtml}
-                    <div class="proposal-author">${proposal.author_name}</div>
-                    <div class="proposal-text">${proposal.text}</div>
-                    ${memeHtml}
-                    ${petitionInfo}
-                    <div class="proposal-stats">
-                        <div class="vote-buttons">
-                            <button class="vote-button ${proposal.userVote === 'upvote' ? 'upvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="upvote">
-                                <span class="vote-icon">✓</span>
-                                <span>Sign</span>
-                            </button>
-                            <button class="vote-button ${proposal.userVote === 'downvote' ? 'downvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="downvote">
-                                <span class="vote-icon">✕</span>
-                                <span>Oppose</span>
-                            </button>
-                            <span class="net-votes ${voteClass}">${netVotes > 0 ? '+' : ''}${netVotes}</span>
-                        </div>
-                        <div class="proposal-time">${formatDate(proposal.timestamp)}</div>
-                    </div>
-                `;
-                
-                proposalsContainer.appendChild(proposalCard);
-                
-                // Add event listeners for vote buttons
-                const upvoteButton = proposalCard.querySelector('[data-vote-type="upvote"]');
-                const downvoteButton = proposalCard.querySelector('[data-vote-type="downvote"]');
-                
-                if (upvoteButton) {
-                    upvoteButton.addEventListener('click', () => {
-                        handleVote(proposal.id, 'upvote');
-                    });
-                }
-                
-                if (downvoteButton) {
-                    downvoteButton.addEventListener('click', () => {
-                        handleVote(proposal.id, 'downvote');
-                    });
-                }
-            });
-        }
+  const proposalsContainer = document.getElementById('proposals-container');
+  if (!proposalsContainer) return;
+  
+  // Clear container
+  proposalsContainer.innerHTML = '';
+  
+  // Show empty state if no proposals
+  if (!proposals || proposals.length === 0) {
+    proposalsContainer.innerHTML = `
+      <div class="empty-state">
+        <p>No petitions yet. Be the first to create one!</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Render each proposal
+  proposals.forEach(proposal => {
+    const netVotes = proposal.upvotes - proposal.downvotes;
+    const voteClass = netVotes > 0 ? 'positive' : netVotes < 0 ? 'negative' : '';
+    
+    const proposalCard = document.createElement('div');
+    proposalCard.className = 'proposal-card';
+    
+    // Badge for trending or power proposals
+    const badgeHtml = proposal.trending ? 
+      `<div class="power-badge trending-badge">🔥 Trending</div>` : 
+      (netVotes > 5 ? `<div class="power-badge">💯 Popular</div>` : '');
+    
+    // Add petition signatures info if proposal has upvotes/signatures
+    const petitionInfo = proposal.upvotes > 0 ? 
+      `<div class="petition-info">
+        <span class="petition-icon">✓</span>
+        <span class="petition-count">${proposal.petition_signatures || proposal.upvotes}</span>
+        <span>verified signatures</span>
+      </div>` : '';
+    
+    // Add meme if available
+    const memeHtml = proposal.meme_url ? 
+      `<div class="proposal-meme">
+        <img src="${proposal.meme_url}" alt="Meme for petition" onerror="this.style.display='none'" />
+      </div>` : '';
+    
+    proposalCard.innerHTML = `
+      ${badgeHtml}
+      <div class="proposal-author">${proposal.author_name}</div>
+      <div class="proposal-text">${proposal.text}</div>
+      ${memeHtml}
+      ${petitionInfo}
+      <div class="proposal-stats">
+        <div class="vote-buttons">
+          <button class="vote-button ${proposal.userVote === 'upvote' ? 'upvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="upvote">
+            <span class="vote-icon">✓</span>
+            <span>Sign</span>
+          </button>
+          <button class="vote-button ${proposal.userVote === 'downvote' ? 'downvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="downvote">
+            <span class="vote-icon">✕</span>
+            <span>Oppose</span>
+          </button>
+          <span class="net-votes ${voteClass}">${netVotes > 0 ? '+' : ''}${netVotes}</span>
+          <button class="share-button" data-proposal-id="${proposal.id}">
+            <span class="share-icon">🔗</span>
+          </button>
+        </div>
+        <div class="proposal-time">${formatDate(proposal.timestamp)}</div>
+      </div>
+    `;
+    
+    proposalsContainer.appendChild(proposalCard);
+    
+    // Add event listeners for vote buttons
+    const upvoteButton = proposalCard.querySelector('[data-vote-type="upvote"]');
+    const downvoteButton = proposalCard.querySelector('[data-vote-type="downvote"]');
+    const shareButton = proposalCard.querySelector('.share-button');
+    
+    if (upvoteButton) {
+      upvoteButton.addEventListener('click', () => {
+        handleVote(proposal.id, 'upvote');
+      });
+    }
+    
+    if (downvoteButton) {
+      downvoteButton.addEventListener('click', () => {
+        handleVote(proposal.id, 'downvote');
+      });
+    }
+    
+    if (shareButton) {
+      shareButton.addEventListener('click', () => {
+        // Copy the shareable link to clipboard
+        copyToClipboard(getShareableLink(proposal.id));
+      });
+    }
+  });
+}
 
         // Create meme upload elements
         function createMemeUpload() {
@@ -1616,7 +1774,7 @@
             
             const consentLabel = document.createElement('label');
             consentLabel.setAttribute('for', 'petition-consent');
-            consentLabel.innerHTML = 'I certify that I am an Australian citizen or eligible resident, registered to vote, and consent to my information being used for this official petition.';
+            consentLabel.innerHTML = 'I certify that I am an Australian citizen or eligible resident, registered to vote, and consent to my information being used for this official petition. I also certify that I am excited to join the radical party as a member and take back our sexy country.';
             
             consentDiv.appendChild(consentCheckbox);
             consentDiv.appendChild(consentLabel);
@@ -1760,6 +1918,38 @@
                 }
             }
         }
+
+        async function checkForProposalInUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const proposalId = urlParams.get('proposal');
+  
+  if (proposalId) {
+    try {
+      // Show loading state
+      showToastMessage('Loading petition...', '#11cc77');
+      
+      // Fetch the specific proposal
+      const response = await fetch(`${API_BASE_URL}/proposals?userId=${currentUser.id}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch proposal');
+      }
+      
+      const proposals = await response.json();
+      const targetProposal = proposals.find(p => p.id === proposalId);
+      
+      if (targetProposal) {
+        // Create and show the modal with the proposal data
+        createProposalViewModal(targetProposal);
+      } else {
+        showToastMessage('⚠️ Petition not found', '#ff0099');
+      }
+    } catch (error) {
+      console.error('Error fetching proposal:', error);
+      showToastMessage('⚠️ Failed to load petition', '#ff0099');
+    }
+  }
+}
         </script>
     </body>
 </html>
