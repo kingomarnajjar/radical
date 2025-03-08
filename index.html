@@ -1950,6 +1950,204 @@
     }
   }
 }
+
+// Generate a shareable link for a proposal
+function getShareableLink(proposalId) {
+  const baseUrl = window.location.origin + window.location.pathname;
+  return `${baseUrl}?proposal=${proposalId}`;
+}
+
+// Copy link to clipboard and show feedback
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      showToastMessage('✓ Link copied to clipboard!', '#11cc77');
+      
+      // Find all share buttons and reset them
+      const shareButtons = document.querySelectorAll('.share-button');
+      shareButtons.forEach(button => {
+        button.classList.remove('copied');
+      });
+      
+      // Find the specific button that was clicked (if any)
+      const clickedButton = document.querySelector(`.share-button[data-proposal-id="${text.split('proposal=')[1]}"]`);
+      if (clickedButton) {
+        clickedButton.classList.add('copied');
+        setTimeout(() => {
+          clickedButton.classList.remove('copied');
+        }, 2000);
+      }
+    })
+    .catch(err => {
+      console.error('Failed to copy: ', err);
+      showToastMessage('⚠️ Failed to copy link', '#ff0099');
+    });
+}
+
+// Create a modal to display when a proposal is opened via direct link
+function createProposalViewModal(proposal) {
+  // Create modal elements
+  const modalOverlay = document.createElement('div');
+  modalOverlay.className = 'modal-overlay';
+
+  const modalContainer = document.createElement('div');
+  modalContainer.className = 'modal-container proposal-view';
+
+  // Modal header
+  const modalHeader = document.createElement('div');
+  modalHeader.className = 'modal-header';
+  
+  const modalTitle = document.createElement('h3');
+  modalTitle.textContent = 'Petition Details';
+  
+  const closeButton = document.createElement('button');
+  closeButton.className = 'modal-close';
+  closeButton.textContent = '✕';
+  closeButton.setAttribute('aria-label', 'Close modal');
+  
+  modalHeader.appendChild(modalTitle);
+  modalHeader.appendChild(closeButton);
+
+  // Modal body
+  const modalBody = document.createElement('div');
+  modalBody.className = 'modal-body';
+  
+  // Add petition info
+  const netVotes = proposal.upvotes - proposal.downvotes;
+  const voteClass = netVotes > 0 ? 'positive' : netVotes < 0 ? 'negative' : '';
+  
+  const badgeHtml = proposal.trending ? 
+    `<div class="power-badge trending-badge" style="position: static; display: inline-block; margin-bottom: 15px;">🔥 Trending</div>` : 
+    (netVotes > 5 ? `<div class="power-badge" style="position: static; display: inline-block; margin-bottom: 15px;">💯 Popular</div>` : '');
+
+  modalBody.innerHTML = `
+    ${badgeHtml}
+    <div class="proposal-author" style="font-size: 1.1rem;">${proposal.author_name}</div>
+    <div class="proposal-text" style="font-size: 1.3rem; margin: 20px 0;">${proposal.text}</div>
+    
+    ${proposal.meme_url ? `<div class="proposal-meme">
+      <img src="${proposal.meme_url}" alt="Meme for petition" onerror="this.style.display='none'" />
+    </div>` : ''}
+    
+    ${proposal.petition_signatures > 0 ? `<div class="petition-info" style="margin: 20px 0;">
+      <span class="petition-icon">✓</span>
+      <span class="petition-count">${proposal.petition_signatures || proposal.upvotes}</span>
+      <span>verified signatures</span>
+    </div>` : ''}
+    
+    <div class="proposal-stats" style="margin-top: 20px; padding-top: 20px;">
+      <div class="vote-buttons">
+        <button class="vote-button ${proposal.userVote === 'upvote' ? 'upvoted' : ''}" id="modal-upvote" data-proposal-id="${proposal.id}" data-vote-type="upvote">
+          <span class="vote-icon">✓</span>
+          <span>Sign</span>
+        </button>
+        <button class="vote-button ${proposal.userVote === 'downvote' ? 'downvoted' : ''}" id="modal-downvote" data-proposal-id="${proposal.id}" data-vote-type="downvote">
+          <span class="vote-icon">✕</span>
+          <span>Oppose</span>
+        </button>
+        <span class="net-votes ${voteClass}">${netVotes > 0 ? '+' : ''}${netVotes}</span>
+      </div>
+      <div class="proposal-time">${formatDate(proposal.timestamp)}</div>
+    </div>
+    
+    <div style="margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px;">
+      <p style="margin-bottom: 15px; font-size: 0.9rem;">Share this petition:</p>
+      <div class="share-link-container">
+        <input type="text" class="share-link-field" value="${getShareableLink(proposal.id)}" readonly>
+        <button class="share-copy-button" id="modal-copy-link">Copy</button>
+      </div>
+      
+      <div class="social-share-buttons">
+        <button class="social-share-button" id="share-twitter">
+          <span class="social-icon">🐦</span>
+          <span>Twitter</span>
+        </button>
+        <button class="social-share-button" id="share-facebook">
+          <span class="social-icon">📘</span>
+          <span>Facebook</span>
+        </button>
+        <button class="social-share-button" id="share-whatsapp">
+          <span class="social-icon">📱</span>
+          <span>WhatsApp</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  modalContainer.appendChild(modalHeader);
+  modalContainer.appendChild(modalBody);
+  
+  modalOverlay.appendChild(modalContainer);
+  document.body.appendChild(modalOverlay);
+  
+  // Add event listeners
+  closeButton.addEventListener('click', () => {
+    document.body.removeChild(modalOverlay);
+    
+    // Update URL to remove the proposal parameter without page reload
+    const newUrl = window.location.pathname;
+    window.history.pushState({}, '', newUrl);
+  });
+  
+  const copyLinkButton = document.getElementById('modal-copy-link');
+  if (copyLinkButton) {
+    copyLinkButton.addEventListener('click', () => {
+      const linkField = document.querySelector('.share-link-field');
+      linkField.select();
+      copyToClipboard(getShareableLink(proposal.id));
+      
+      // Add flash animation
+      copyLinkButton.classList.add('flash-animation');
+      setTimeout(() => {
+        copyLinkButton.classList.remove('flash-animation');
+      }, 500);
+    });
+  }
+  
+  // Add event listeners for vote buttons
+  const upvoteButton = document.getElementById('modal-upvote');
+  const downvoteButton = document.getElementById('modal-downvote');
+  
+  if (upvoteButton) {
+    upvoteButton.addEventListener('click', () => {
+      handleVote(proposal.id, 'upvote');
+    });
+  }
+  
+  if (downvoteButton) {
+    downvoteButton.addEventListener('click', () => {
+      handleVote(proposal.id, 'downvote');
+    });
+  }
+  
+  // Add event listeners for social share buttons
+  const twitterButton = document.getElementById('share-twitter');
+  const facebookButton = document.getElementById('share-facebook');
+  const whatsappButton = document.getElementById('share-whatsapp');
+  
+  if (twitterButton) {
+    twitterButton.addEventListener('click', () => {
+      const text = `Check out this RADICAL petition: "${proposal.text.substring(0, 100)}${proposal.text.length > 100 ? '...' : ''}"`;
+      const url = getShareableLink(proposal.id);
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+    });
+  }
+  
+  if (facebookButton) {
+    facebookButton.addEventListener('click', () => {
+      const url = getShareableLink(proposal.id);
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    });
+  }
+  
+  if (whatsappButton) {
+    whatsappButton.addEventListener('click', () => {
+      const text = `Check out this RADICAL petition: "${proposal.text.substring(0, 100)}${proposal.text.length > 100 ? '...' : ''}"`;
+      const url = getShareableLink(proposal.id);
+      window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
+    });
+  }
+}
         </script>
     </body>
 </html>
