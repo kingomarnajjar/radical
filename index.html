@@ -1774,77 +1774,103 @@ function addCommentsToProposal(proposalCard, proposalId) {
     toggleComments(proposalId, commentsToggle);
   });
 }
-  // Music player functionality
-  document.addEventListener('DOMContentLoaded', () => {
-        // Set up variables
-        const backgroundMusic = document.getElementById('background-music');
-        const musicControls = document.getElementById('music-controls');
-        const musicToggle = document.getElementById('music-toggle');
-        const musicPrompt = document.getElementById('music-prompt');
-        let musicInitialized = false;
-        
-        // Show the prompt after a delay
-        setTimeout(() => {
-            musicPrompt.classList.add('visible');
-        }, 3000);
-        
-        // Audio file URL - this should point to your audio file in R2
-        const audioUrl = 'https://radical.omar-c29.workers.dev/memes/steppingout.mp3';
-        
-        // Initialize music on first click anywhere on the page
-        document.addEventListener('click', initializeMusic, { once: true });
-        
-        function initializeMusic() {
-            if (musicInitialized) return;
-            
-            // Set the audio source
-            backgroundMusic.src = audioUrl;
-            
-            // Load the audio
-            backgroundMusic.load();
-            
-            // Play the audio (this may fail due to browser autoplay policies)
-            playAudio();
-            
-            // Show the music controls
-            musicControls.style.display = 'flex';
-            
-            // Hide the prompt
-            musicPrompt.classList.remove('visible');
-            
-            // Add event listener for the toggle button
-            musicToggle.addEventListener('click', toggleMusic);
-            
-            // Mark as initialized
-            musicInitialized = true;
-            
-            // Remove the initial click listener
-            document.removeEventListener('click', initializeMusic);
-        }
-        
-        function playAudio() {
-        backgroundMusic.play().then(() => {
-            // Use a span wrapper to apply the animation
-            musicToggle.innerHTML = '<span class="vinyl-spinning">📀</span>';
-            musicToggle.classList.remove('pulse');
-        }).catch(error => {
-            console.error('Failed to play audio:', error);
-            musicToggle.innerHTML = '<span class="vinyl-ready">📻</span>';
-            musicToggle.classList.add('pulse');
-        });
+ // Music player functionality
+document.addEventListener('DOMContentLoaded', () => {
+  // Set up variables
+  const backgroundMusic = document.getElementById('background-music');
+  const musicControls = document.getElementById('music-controls');
+  const musicToggle = document.getElementById('music-toggle');
+  const musicPrompt = document.getElementById('music-prompt');
+  let musicInitialized = false;
+  
+  // Make sure the musicPrompt element exists
+  if (!musicPrompt) {
+    console.error("Music prompt element not found!");
+    return;
+  }
+  
+  // Make sure it's visible and clickable
+  musicPrompt.style.opacity = '1';
+  musicPrompt.style.pointerEvents = 'auto';
+  musicPrompt.style.cursor = 'pointer';
+  musicPrompt.classList.add('visible');
+  
+  // Log when the element is clicked for debugging
+  console.log("Music prompt element found, adding click listener");
+  
+  // Audio file URL - this should point to your audio file in R2
+  const audioUrl = 'https://radical.omar-c29.workers.dev/memes/steppingout.mp3';
+  
+  // Initialize music only when the "hit me" button is clicked
+  musicPrompt.addEventListener('click', function(e) {
+    console.log("Hit me button clicked!");
+    e.preventDefault();
+    e.stopPropagation();
+    initializeMusic();
+  });
+  
+  function initializeMusic() {
+    console.log("Initializing music...");
+    if (musicInitialized) {
+      console.log("Music already initialized, returning");
+      return;
     }
     
-    function toggleMusic() {
-        if (backgroundMusic.paused) {
-            playAudio();
-        } else {
-            backgroundMusic.pause();
-            musicToggle.innerHTML = '<span class="vinyl-ready">📻</span>';
-            musicToggle.classList.add('pulse');
-        }
-    }
+    // Set the audio source
+    backgroundMusic.src = audioUrl;
+    console.log("Set audio source to:", audioUrl);
     
+    // Load the audio
+    backgroundMusic.load();
+    console.log("Audio loaded");
+    
+    try {
+      // Play the audio (this may fail due to browser autoplay policies)
+      console.log("Attempting to play audio...");
+      playAudio();
+      
+      // Show the music controls
+      musicControls.style.display = 'flex';
+      
+      // Hide the prompt
+      musicPrompt.style.display = 'none';
+      
+      // Add event listener for the toggle button
+      musicToggle.addEventListener('click', toggleMusic);
+      
+      // Mark as initialized
+      musicInitialized = true;
+      
+      console.log("Music initialized successfully");
+    } catch (error) {
+      console.error("Error initializing music:", error);
+    }
+  }
+  
+  function playAudio() {
+    console.log("Playing audio...");
+    backgroundMusic.play().then(() => {
+      console.log("Audio playing successfully");
+      // Use a span wrapper to apply the animation
+      musicToggle.innerHTML = '<span class="vinyl-spinning">📀</span>';
+      musicToggle.classList.remove('pulse');
+    }).catch(error => {
+      console.error('Failed to play audio:', error);
+      musicToggle.innerHTML = '<span class="vinyl-ready">📻</span>';
+      musicToggle.classList.add('pulse');
     });
+  }
+  
+  function toggleMusic() {
+    if (backgroundMusic.paused) {
+      playAudio();
+    } else {
+      backgroundMusic.pause();
+      musicToggle.innerHTML = '<span class="vinyl-ready">📻</span>';
+      musicToggle.classList.add('pulse');
+    }
+  }
+});
 
     // Add these functions outside your renderProposals function
 
