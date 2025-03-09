@@ -4,8 +4,8 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>RADICAL - Australia's Democratic Revolution</title>
-        <!-- <meta property="og:image" content="${getShareableImageUrl(proposal)}">
-        <meta property="twitter:image" content="${getShareableImageUrl(proposal)}"> -->
+        <meta property="og:image" content="${getShareableImageUrl(proposal)}">
+        <meta property="twitter:image" content="${getShareableImageUrl(proposal)}">
         <link rel="icon" href="https://radical.omar-c29.workers.dev/memes/favicon.jpg" type="image/png">
         <!-- Primary Meta Tags -->
         <meta property="og:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG">
@@ -1063,6 +1063,85 @@
   color: var(--text-muted);
   font-style: italic;
 }   
+
+.music-controls {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        background-color: var(--card-bg);
+        border: 1px solid var(--primary);
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 0 10px rgba(255, 0, 153, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .music-controls:hover {
+        box-shadow: 0 0 15px rgba(255, 0, 153, 0.5);
+    }
+    
+    .music-button {
+        background: none;
+        border: none;
+        color: var(--text);
+        font-size: 24px;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    
+    .music-button:hover {
+        color: var(--primary);
+        transform: scale(1.1);
+    }
+    
+    .music-label {
+        color: var(--text-muted);
+        font-size: 12px;
+        font-family: 'Roboto Mono', monospace;
+    }
+    
+    /* Animation for the play button */
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+    
+    /* Initial prompt to click for music */
+    .music-prompt {
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        background-color: var(--primary);
+        color: var(--dark);
+        padding: 8px 15px;
+        font-size: 12px;
+        font-family: 'Roboto Mono', monospace;
+        border-radius: 0;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.3s ease;
+        pointer-events: none;
+        z-index: 1000;
+    }
+    
+    .music-prompt.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
         </style>
     </head>
     <body>
@@ -2751,6 +2830,87 @@ function addCommentsToProposal(proposalCard, proposalId) {
     toggleComments(proposalId, commentsToggle);
   });
 }
+  // Music player functionality
+  document.addEventListener('DOMContentLoaded', () => {
+        // Set up variables
+        const backgroundMusic = document.getElementById('background-music');
+        const musicControls = document.getElementById('music-controls');
+        const musicToggle = document.getElementById('music-toggle');
+        const musicPrompt = document.getElementById('music-prompt');
+        let musicInitialized = false;
+        
+        // Show the prompt after a delay
+        setTimeout(() => {
+            musicPrompt.classList.add('visible');
+        }, 3000);
+        
+        // Audio file URL - this should point to your audio file in R2
+        const audioUrl = 'https://radical.omar-c29.workers.dev/memes/steppingout.mp3';
+        
+        // Initialize music on first click anywhere on the page
+        document.addEventListener('click', initializeMusic, { once: true });
+        
+        function initializeMusic() {
+            if (musicInitialized) return;
+            
+            // Set the audio source
+            backgroundMusic.src = audioUrl;
+            
+            // Load the audio
+            backgroundMusic.load();
+            
+            // Play the audio (this may fail due to browser autoplay policies)
+            playAudio();
+            
+            // Show the music controls
+            musicControls.style.display = 'flex';
+            
+            // Hide the prompt
+            musicPrompt.classList.remove('visible');
+            
+            // Add event listener for the toggle button
+            musicToggle.addEventListener('click', toggleMusic);
+            
+            // Mark as initialized
+            musicInitialized = true;
+            
+            // Remove the initial click listener
+            document.removeEventListener('click', initializeMusic);
+        }
+        
+        function playAudio() {
+            backgroundMusic.play().then(() => {
+                musicToggle.innerHTML = '📀';
+                musicToggle.classList.remove('pulse');
+            }).catch(error => {
+                console.error('Failed to play audio:', error);
+                musicToggle.innerHTML = '📻';
+                musicToggle.classList.add('pulse');
+            });
+        }
+        
+        function toggleMusic() {
+            if (backgroundMusic.paused) {
+                playAudio();
+            } else {
+                backgroundMusic.pause();
+                musicToggle.innerHTML = '📻';
+                musicToggle.classList.add('pulse');
+            }
+        }
+    });
         </script>
+
+        <div class="music-prompt" id="music-prompt">Click anywhere for immersive experience</div>
+        <div class="music-controls" style="display: none;" id="music-controls">
+            <button class="music-button" id="music-toggle" aria-label="Play or pause music">
+                ▶️
+            </button>
+            <span class="music-label">Radical Vibes</span>
+        </div>
+        
+        <audio id="background-music" loop>
+            <!-- The src will be set via JavaScript after user interaction -->
+        </audio>
     </body>
 </html>
