@@ -931,6 +931,138 @@
     animation: copyFlash 0.5s;
 }
         }
+
+        /* Comments Section Styles */
+.comments-section {
+  margin-top: 15px;
+  border-top: 1px solid var(--border);
+  padding-top: 15px;
+}
+
+.comments-toggle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  padding: 0;
+  margin-bottom: 10px;
+}
+
+.comments-toggle:hover {
+  color: var(--primary);
+}
+
+.comments-toggle-icon {
+  margin-right: 5px;
+  transition: transform 0.3s ease;
+}
+
+.comments-toggle[aria-expanded="true"] .comments-toggle-icon {
+  transform: rotate(90deg);
+}
+
+.comments-container {
+  display: none;
+  margin-top: 10px;
+}
+
+.comments-container.show {
+  display: block;
+}
+
+.comment-item {
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.comment-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.comment-author {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--primary);
+}
+
+.comment-time {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.comment-text {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.comment-form {
+  display: flex;
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+
+.comment-input {
+  flex: 1;
+  padding: 10px;
+  background-color: var(--darker);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.9rem;
+  resize: none;
+  min-height: 38px;
+  max-height: 100px;
+  overflow-y: auto;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.comment-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.comment-submit {
+  background-color: var(--primary);
+  color: var(--dark);
+  border: none;
+  padding: 0 15px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.comment-submit:disabled {
+  background-color: #333;
+  color: #555;
+  cursor: not-allowed;
+}
+
+.comments-loading {
+  text-align: center;
+  padding: 10px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.no-comments {
+  text-align: center;
+  padding: 15px 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-style: italic;
+}   
         </style>
     </head>
     <body>
@@ -1603,6 +1735,11 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
 `;
     
     proposalsContainer.appendChild(proposalCard);
+
+    
+   
+ // Add comments section to the proposal card - NEW CODE
+ addCommentsToProposal(proposalCard, proposal.id);
     
     // Add event listeners for vote buttons
     const upvoteButton = proposalCard.querySelector('[data-vote-type="upvote"]');
@@ -2263,6 +2400,20 @@ function createProposalViewModal(proposal) {
         </button>
       </div>
     </div>
+    `;
+  modalBody.innerHTML += `
+    <div class="comments-section" style="margin-top: 30px;">
+      <h4 style="margin-bottom: 15px; color: var(--primary);">Comments</h4>
+      <div class="comments-container show" data-proposal-id="${proposal.id}">
+        <form class="comment-form">
+          <textarea class="comment-input" placeholder="Add a comment..."></textarea>
+          <button type="submit" class="comment-submit" disabled>Post</button>
+        </form>
+        <div class="comments-content">
+          <div class="comments-loading">Loading comments...</div>
+        </div>
+      </div>
+    </div>
   `;
 
   modalContainer.appendChild(modalHeader);
@@ -2338,6 +2489,25 @@ function createProposalViewModal(proposal) {
       window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
     });
   }
+
+  // Handle comment form in modal
+  const modalCommentForm = modalBody.querySelector('.comment-form');
+  const modalCommentInput = modalBody.querySelector('.comment-input');
+  const modalCommentSubmit = modalBody.querySelector('.comment-submit');
+  
+  if (modalCommentForm && modalCommentInput && modalCommentSubmit) {
+    modalCommentInput.addEventListener('input', () => {
+      checkCommentInput(modalCommentInput, modalCommentSubmit);
+    });
+    
+    modalCommentForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      submitComment(proposal.id, modalCommentForm);
+    });
+    
+    // Load comments for the modal
+    loadComments(proposal.id);
+  }
 }
 
 function getShareableImageUrl(proposal) {
@@ -2360,6 +2530,226 @@ function getShareableImageUrl(proposal) {
   
   // Combine everything
   return `${cloudinaryUrl}/${textParams}/${templateUrl}`;
+}
+
+// Function to toggle comments visibility
+function toggleComments(proposalId, button) {
+  const commentsContainer = document.querySelector(`.comments-container[data-proposal-id="${proposalId}"]`);
+  const isExpanded = button.getAttribute('aria-expanded') === 'true';
+  
+  if (isExpanded) {
+    button.setAttribute('aria-expanded', 'false');
+    commentsContainer.classList.remove('show');
+  } else {
+    button.setAttribute('aria-expanded', 'true');
+    commentsContainer.classList.add('show');
+    loadComments(proposalId);
+  }
+}
+
+// Function to load comments for a proposal
+async function loadComments(proposalId) {
+  const commentsContainer = document.querySelector(`.comments-container[data-proposal-id="${proposalId}"]`);
+  const commentsContent = commentsContainer.querySelector('.comments-content');
+  
+  // Show loading state
+  commentsContent.innerHTML = `<div class="comments-loading">Loading comments...</div>`;
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch comments');
+    }
+    
+    const comments = await response.json();
+    renderComments(commentsContent, comments);
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    commentsContent.innerHTML = `
+      <div class="no-comments">
+        Failed to load comments. Please try again.
+      </div>
+    `;
+  }
+}
+
+// Function to render comments
+function renderComments(container, comments) {
+  if (!comments || comments.length === 0) {
+    container.innerHTML = `
+      <div class="no-comments">
+        No comments yet. Be the first to comment!
+      </div>
+    `;
+    return;
+  }
+  
+  let commentsHtml = '';
+  
+  comments.forEach(comment => {
+    commentsHtml += `
+      <div class="comment-item">
+        <div class="comment-header">
+          <div class="comment-author">${comment.user_name}</div>
+          <div class="comment-time">${formatDate(comment.timestamp)}</div>
+        </div>
+        <div class="comment-text">${formatCommentText(comment.comment_text)}</div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = commentsHtml;
+}
+
+// Function to format comment text (converts URLs to links, etc.)
+function formatCommentText(text) {
+  // Escape HTML to prevent XSS
+  const escaped = text.replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+  
+  // Convert URLs to clickable links
+  const withLinks = escaped.replace(
+    /(https?:\/\/[^\s]+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:underline;">$1</a>'
+  );
+  
+  return withLinks;
+}
+
+// Function to submit a new comment
+async function submitComment(proposalId, form) {
+  const commentInput = form.querySelector('.comment-input');
+  const submitButton = form.querySelector('.comment-submit');
+  
+  const commentText = commentInput.value.trim();
+  
+  if (!commentText) return;
+  
+  // Disable form while submitting
+  commentInput.disabled = true;
+  submitButton.disabled = true;
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/comments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        proposalId: proposalId,
+        userId: currentUser.id,
+        commentText: commentText
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to submit comment');
+    }
+    
+    // Clear input
+    commentInput.value = '';
+    
+    // Reload comments to show the new one
+    const commentsContainer = document.querySelector(`.comments-container[data-proposal-id="${proposalId}"]`);
+    const commentsContent = commentsContainer.querySelector('.comments-content');
+    
+    // Add new comment to the top (optimistic update)
+    const newComment = await response.json();
+    const tempCommentHtml = `
+      <div class="comment-item" style="animation: fadeIn 0.5s;">
+        <div class="comment-header">
+          <div class="comment-author">${newComment.userName}</div>
+          <div class="comment-time">just now</div>
+        </div>
+        <div class="comment-text">${formatCommentText(newComment.commentText)}</div>
+      </div>
+    `;
+    
+    // If there are no comments yet, replace the "no comments" message
+    if (commentsContent.querySelector('.no-comments')) {
+      commentsContent.innerHTML = tempCommentHtml;
+    } else {
+      // Otherwise, prepend to existing comments
+      commentsContent.insertAdjacentHTML('afterbegin', tempCommentHtml);
+    }
+    
+  } catch (error) {
+    console.error('Error posting comment:', error);
+    showToastMessage('Failed to post comment. Please try again.', '#ff0099');
+  } finally {
+    // Re-enable form
+    commentInput.disabled = false;
+    submitButton.disabled = false;
+  }
+}
+
+// Function to check if comment input is not empty
+function checkCommentInput(input, submitButton) {
+  const hasContent = input.value.trim().length > 0;
+  submitButton.disabled = !hasContent;
+}
+
+// Addition to renderProposals function - Add comments section to each proposal card
+function addCommentsToProposal(proposalCard, proposalId) {
+  const commentsSection = document.createElement('div');
+  commentsSection.className = 'comments-section';
+  
+  const commentsToggle = document.createElement('button');
+  commentsToggle.className = 'comments-toggle';
+  commentsToggle.setAttribute('aria-expanded', 'false');
+  commentsToggle.innerHTML = '<span class="comments-toggle-icon">▶</span> Show comments';
+  
+  const commentsContainer = document.createElement('div');
+  commentsContainer.className = 'comments-container';
+  commentsContainer.setAttribute('data-proposal-id', proposalId);
+  
+  const commentsForm = document.createElement('form');
+  commentsForm.className = 'comment-form';
+  commentsForm.onsubmit = (e) => {
+    e.preventDefault();
+    submitComment(proposalId, commentsForm);
+  };
+  
+  const commentInput = document.createElement('textarea');
+  commentInput.className = 'comment-input';
+  commentInput.placeholder = 'Add a comment...';
+  commentInput.rows = 1;
+  commentInput.oninput = () => checkCommentInput(commentInput, commentSubmit);
+  
+  // Auto-resize textarea as user types
+  commentInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
+  });
+  
+  const commentSubmit = document.createElement('button');
+  commentSubmit.className = 'comment-submit';
+  commentSubmit.type = 'submit';
+  commentSubmit.textContent = 'Post';
+  commentSubmit.disabled = true;
+  
+  commentsForm.appendChild(commentInput);
+  commentsForm.appendChild(commentSubmit);
+  
+  const commentsContent = document.createElement('div');
+  commentsContent.className = 'comments-content';
+  
+  commentsContainer.appendChild(commentsForm);
+  commentsContainer.appendChild(commentsContent);
+  
+  commentsSection.appendChild(commentsToggle);
+  commentsSection.appendChild(commentsContainer);
+  
+  proposalCard.appendChild(commentsSection);
+  
+  // Add event listener to toggle button
+  commentsToggle.addEventListener('click', () => {
+    toggleComments(proposalId, commentsToggle);
+  });
 }
         </script>
     </body>
