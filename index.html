@@ -769,30 +769,26 @@
             /* Add these styles to your existing CSS */
 
 .share-button {
-    background: var(--darker);
-    border: 1px solid var(--border);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    font-size: 14px;
-    transition: all 0.2s ease;
-    padding: 6px 10px;
-    border-radius: 0;
-    margin-left: 10px;
-    font-family: 'Roboto Mono', monospace;
-}
-
-.share-button:hover {
-    background-color: var(--darker);
-    color: var(--primary);
-    border-color: var(--primary);
+  background: var(--darker);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  padding: 6px 14px;
+  border-radius: 0;
+  margin-left: 10px;
 }
 
 .share-icon {
-    font-size: 14px;
+  display: block;
+  background-color: transparent !important;
+  mix-blend-mode: screen; /* This helps with image transparency */
 }
+
 
 /* Optional: Add a tooltip for the share button */
 .share-button {
@@ -1029,9 +1025,9 @@
             const sortSelect = document.getElementById('sort-select');
             if (sortSelect) {
                 const options = sortSelect.querySelectorAll('option');
-                if (options[0]) options[0].textContent = 'Latest Petitions';
-                if (options[1]) options[1].textContent = 'Most Signatures';
-                if (options[2]) options[2].textContent = 'Most Debated';
+                if (options[0]) options[0].textContent = 'Latest ideas';
+                if (options[1]) options[1].textContent = 'Most liked';
+                if (options[2]) options[2].textContent = 'controversial';
             }
             
             const proposalInput = document.getElementById('proposal-input');
@@ -1265,26 +1261,32 @@
         }
         
         // Handle voting
-        async function handleVote(proposalId, voteType) {
-            currentProposalId = proposalId;
-            currentVoteType = voteType;
+async function handleVote(proposalId, voteType) {
+    currentProposalId = proposalId;
+    currentVoteType = voteType;
 
-            // Check if user needs to provide AEC details for petition signing
-            if (voteType === 'upvote') {
-                // Check if user already verified for this vote
-                if (verifiedUsers[currentUser.id] && verifiedUsers[currentUser.id][proposalId]) {
-                    // User already verified for this proposal, proceed with vote
-                    submitVote(proposalId, voteType, true, verifiedUsers[currentUser.id][proposalId].userData);
-                    return;
-                }
+    // TEMPORARILY DISABLED AEC VERIFICATION
+    // Simply submit the vote directly regardless of vote type
+    submitVote(proposalId, voteType, voteType === 'upvote');
 
-                // Show verification modal for petition signing
-                showVerificationModal(proposalId);
-            } else {
-                // Downvotes don't require verification
-                submitVote(proposalId, voteType, false);
-            }
+    /* Original code commented out
+    // Check if user needs to provide AEC details for petition signing
+    if (voteType === 'upvote') {
+        // Check if user already verified for this vote
+        if (verifiedUsers[currentUser.id] && verifiedUsers[currentUser.id][proposalId]) {
+            // User already verified for this proposal, proceed with vote
+            submitVote(proposalId, voteType, true, verifiedUsers[currentUser.id][proposalId].userData);
+            return;
         }
+
+        // Show verification modal for petition signing
+        showVerificationModal(proposalId);
+    } else {
+        // Downvotes don't require verification
+        submitVote(proposalId, voteType, false);
+    }
+    */
+}
         
         // Submit vote with petition data if applicable
         async function submitVote(proposalId, voteType, isPetition = false, petitionDetails = null) {
@@ -1391,30 +1393,31 @@
         <img src="${proposal.meme_url}" alt="Meme for petition" onerror="this.style.display='none'" />
       </div>` : '';
     
-    proposalCard.innerHTML = `
-      ${badgeHtml}
-      <div class="proposal-author">${proposal.author_name}</div>
-      <div class="proposal-text">${proposal.text}</div>
-      ${memeHtml}
-      ${petitionInfo}
-      <div class="proposal-stats">
-        <div class="vote-buttons">
-          <button class="vote-button ${proposal.userVote === 'upvote' ? 'upvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="upvote">
-            <span class="vote-icon">✓</span>
-            <span>Sign</span>
-          </button>
-          <button class="vote-button ${proposal.userVote === 'downvote' ? 'downvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="downvote">
-            <span class="vote-icon">✕</span>
-            <span>Oppose</span>
-          </button>
-          <span class="net-votes ${voteClass}">${netVotes > 0 ? '+' : ''}${netVotes}</span>
-          <button class="share-button" data-proposal-id="${proposal.id}">
-  <img src="https://radical.omar-c29.workers.dev/memes/share-arrow-icon-md.png" alt="Share" class="share-icon" style="width: 14px; height: 14px;">
+      proposalCard.innerHTML = `
+  ${badgeHtml}
+  <div class="proposal-author">${proposal.author_name}</div>
+  <div class="proposal-text">${proposal.text}</div>
+  ${memeHtml}
+  ${petitionInfo}
+  <div class="proposal-stats">
+    <div class="vote-buttons">
+      <button class="vote-button ${proposal.userVote === 'upvote' ? 'upvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="upvote">
+        <span class="vote-icon">▲</span>
+        <span>${proposal.upvotes || 0}</span>
+      </button>
+      <button class="vote-button ${proposal.userVote === 'downvote' ? 'downvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="downvote">
+        <span class="vote-icon">▼</span>
+        <span>${proposal.downvotes || 0}</span>
+      </button>
+      <span class="net-votes ${voteClass}">${netVotes > 0 ? '+' : ''}${netVotes}</span>
+ <button class="share-button" data-proposal-id="${proposal.id}" style="background-color: #000000; border: 0px solid #333333; color: #aaaaaa; padding: 4px 8px; font-size: 20px;">
+    <img src="https://radical.omar-c29.workers.dev/memes/share-arrow-icon-md.png" alt="Share" class="share-icon" style="width: 20px; height: 14px; filter: brightness(0) invert(1);">
+
 </button>
-        </div>
-        <div class="proposal-time">${formatDate(proposal.timestamp)}</div>
-      </div>
-    `;
+    </div>
+    <div class="proposal-time">${formatDate(proposal.timestamp)}</div>
+  </div>
+`;
     
     proposalsContainer.appendChild(proposalCard);
     
