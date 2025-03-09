@@ -658,8 +658,16 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
     const netVotes = proposal.upvotes - proposal.downvotes;
     const voteClass = netVotes > 0 ? 'positive' : netVotes < 0 ? 'negative' : '';
     
+    const proposalButton = document.createElement('a');
+    proposalButton.href = getShareableLink(proposal.id);
+
+    proposalButton.addEventListener('click', e => {
+        e.stopPropagation();
+    });
+
     const proposalCard = document.createElement('div');
     proposalCard.className = 'proposal-card';
+    proposalButton.appendChild(proposalCard);
     
     // Badge for trending or power proposals
     const badgeHtml = proposal.trending ? 
@@ -688,16 +696,16 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
   ${petitionInfo}
   <div class="proposal-stats">
     <div class="vote-buttons">
-      <button class="vote-button ${proposal.userVote === 'upvote' ? 'upvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="upvote">
+      <button class="vote-button ${proposal.userVote === 'upvote' ? 'upvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="upvote" onclick="event.stopPropagation(); event.preventDefault();">
         <span class="vote-icon">▲</span>
         <span>${proposal.upvotes || 0}</span>
       </button>
-      <button class="vote-button ${proposal.userVote === 'downvote' ? 'downvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="downvote">
+      <button class="vote-button ${proposal.userVote === 'downvote' ? 'downvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="downvote" onclick="event.stopPropagation(); event.preventDefault();">
         <span class="vote-icon">▼</span>
         <span>${proposal.downvotes || 0}</span>
       </button>
       <span class="net-votes ${voteClass}">${netVotes > 0 ? '+' : ''}${netVotes}</span>
- <button class="share-button" data-proposal-id="${proposal.id}" style="background-color: #000000; border: 0px solid #333333; color: #aaaaaa; padding: 4px 8px; font-size: 20px;">
+ <button class="share-button" data-proposal-id="${proposal.id}" style="background-color: #000000; border: 0px solid #333333; color: #aaaaaa; padding: 4px 8px; font-size: 20px;" onclick="event.stopPropagation(); event.preventDefault();" >
     <img src="https://radical.omar-c29.workers.dev/memes/share-arrow-icon-md.png" alt="Share" class="share-icon" style="width: 20px; height: 14px; filter: brightness(0) invert(1);">
 
 </button>
@@ -706,7 +714,7 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
   </div>
 `;
     
-    proposalsContainer.appendChild(proposalCard);
+    proposalsContainer.appendChild(proposalButton);
 
     
    
@@ -1676,6 +1684,7 @@ function addCommentsToProposal(proposalCard, proposalId) {
   commentsToggle.className = 'comments-toggle';
   commentsToggle.setAttribute('aria-expanded', 'false');
   commentsToggle.innerHTML = '<span class="comments-toggle-icon">▶</span> x comments';
+  commentsToggle.onclick="event.stopPropagation(); event.preventDefault();" 
   
   const commentsContainer = document.createElement('div');
   commentsContainer.className = 'comments-container';
