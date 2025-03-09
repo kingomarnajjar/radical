@@ -1108,17 +1108,30 @@
         font-family: 'Roboto Mono', monospace;
     }
     
-    /* Animation for the play button */
+    @keyframes spin {
+        0% { transform: rotate(0deg) scale(1); }
+        100% { transform: rotate(360deg) scale(1); }
+    }
+    
     @keyframes pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.1); }
         100% { transform: scale(1); }
     }
     
-    .pulse {
-        animation: pulse 2s infinite;
+    .vinyl-spinning {
+        display: inline-block;
+        animation: spin 3s linear infinite;
+        transform-origin: center center;
+        font-size: 28px; /* Make it a bit bigger than the radio */
     }
     
+    .vinyl-ready {
+        display: inline-block;
+        font-size: 24px;
+        animation: pulse 2s infinite;
+    }
+
     /* Initial prompt to click for music */
     .music-prompt {
         position: fixed;
@@ -2879,29 +2892,31 @@ function addCommentsToProposal(proposalCard, proposalId) {
         }
         
         function playAudio() {
-            backgroundMusic.play().then(() => {
-                musicToggle.innerHTML = '📀';
-                musicToggle.classList.remove('pulse');
-            }).catch(error => {
-                console.error('Failed to play audio:', error);
-                musicToggle.innerHTML = '📻';
-                musicToggle.classList.add('pulse');
-            });
+        backgroundMusic.play().then(() => {
+            // Use a span wrapper to apply the animation
+            musicToggle.innerHTML = '<span class="vinyl-spinning">📀</span>';
+            musicToggle.classList.remove('pulse');
+        }).catch(error => {
+            console.error('Failed to play audio:', error);
+            musicToggle.innerHTML = '<span class="vinyl-ready">📻</span>';
+            musicToggle.classList.add('pulse');
+        });
+    }
+    
+    function toggleMusic() {
+        if (backgroundMusic.paused) {
+            playAudio();
+        } else {
+            backgroundMusic.pause();
+            musicToggle.innerHTML = '<span class="vinyl-ready">📻</span>';
+            musicToggle.classList.add('pulse');
         }
-        
-        function toggleMusic() {
-            if (backgroundMusic.paused) {
-                playAudio();
-            } else {
-                backgroundMusic.pause();
-                musicToggle.innerHTML = '📻';
-                musicToggle.classList.add('pulse');
-            }
-        }
+    }
+    
     });
         </script>
 
-        <div class="music-prompt" id="music-prompt">Click anywhere for immersive experience</div>
+        <div class="music-prompt" id="music-prompt">hit me</div>
         <div class="music-controls" style="display: none;" id="music-controls">
             <button class="music-button" id="music-toggle" aria-label="Play or pause music">
                 ▶️
