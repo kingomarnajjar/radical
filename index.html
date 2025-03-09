@@ -1421,7 +1421,7 @@ function createProposalViewModal(proposal) {
       (
         ('share' in navigator) ?`
             <div class="social-share-buttons">
-                <button class="social-share-button" onclick()="navigator.share({ title: 'What do you think?', text: '${proposal.text}', url: '${getShareableLink(proposal.id)}' })">
+                <button class="social-share-button" onclick="navigator.share({ title: 'What do you think?', text: '${proposal.text}', url: '${getShareableLink(proposal.id)}' })">
                 <span>Share</span>
                 </button>
             </div>
