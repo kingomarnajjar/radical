@@ -1456,9 +1456,13 @@ async function handleVote(proposalId, voteType) {
             uploadLabel.className = 'meme-upload-label';
             uploadLabel.setAttribute('for', 'meme-upload-input');
             
-            const uploadIcon = document.createElement('span');
-            uploadIcon.className = 'meme-upload-icon';
-            uploadIcon.textContent = '🖼️';
+            const uploadIcon = document.createElement('img');
+uploadIcon.className = 'meme-upload-icon';
+uploadIcon.src = 'https://radical.omar-c29.workers.dev/memes/pepe.jpg';
+uploadIcon.alt = 'Pepe';
+uploadIcon.style.width = '20px';
+uploadIcon.style.height = '20px';
+uploadIcon.style.marginRight = '8px';
             
             const uploadText = document.createElement('span');
             uploadText.className = 'meme-upload-text';
