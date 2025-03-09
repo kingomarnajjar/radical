@@ -35,1127 +35,9 @@
         <link
             href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap"
             rel="stylesheet">
-        <style>
-        :root {
-            --primary: #ff0099;
-            --primary-light: #ff66c4;
-            --primary-dark: #cc007a;
-            --secondary: #ffffff;
-            --accent: #ff0099;
-            --dark: #000000;
-            --darker: #111111;
-            --light: #ffffff;
-            --border: #333333;
-            --text: #ffffff;
-            --text-muted: #aaaaaa;
-            --success: #11cc77;
-            --danger: #ff0099;
-            --card-bg: rgba(0, 0, 0, 0.8);
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Roboto Mono', monospace;
-        }
-        
-        body {
-            background-color: var(--dark);
-            color: var(--text);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-        
-        header {
-            text-align: center;
-            margin-bottom: 50px;
-            padding: 40px 20px;
-            border-radius: 0;
-            background: var(--card-bg);
-            border: 1px solid var(--primary);
-            box-shadow: 0 0 20px rgba(255, 0, 153, 0.3);
-        }
-        
-        header h1 {
-            font-size: 4rem;
-            font-weight: 700;
-            letter-spacing: -2px;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            color: var(--primary);
-            text-shadow: 0 0 10px rgba(255, 0, 153, 0.5);
-        }
-        
-        header p {
-            font-size: 1.1rem;
-            font-weight: 400;
-            margin-top: 10px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            color: var(--text);
-        }
-        
-        .tagline {
-            display: inline-block;
-            background-color: var(--primary);
-            padding: 8px 20px;
-            border-radius: 0;
-            font-size: 0.9rem;
-            margin-top: 20px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: var(--dark);
-            font-weight: 600;
-        }
-        
-        .new-proposal {
-            background: var(--card-bg);
-            border-radius: 0;
-            padding: 30px;
-            margin-bottom: 40px;
-            box-shadow: 0 0 20px rgba(255, 0, 153, 0.2);
-            border: 1px solid var(--border);
-            transition: all 0.3s ease;
-        }
-        
-        .new-proposal:hover {
-            box-shadow: 0 0 30px rgba(255, 0, 153, 0.3);
-            border-color: var(--primary);
-        }
-        
-        .proposal-input {
-            width: 100%;
-            padding: 20px;
-            border: none;
-            border-radius: 0;
-            resize: none;
-            font-size: 16px;
-            margin-bottom: 15px;
-            background-color: rgba(17, 17, 17, 1);
-            color: var(--text);
-            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
-            transition: all 0.3s ease;
-            border: 1px solid var(--border);
-            font-family: 'Roboto Mono', monospace;
-        }
-        
-        .proposal-input:focus {
-            outline: none;
-            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 0, 153, 0.3);
-            border-color: var(--primary);
-        }
-        
-        .proposal-input::placeholder {
-            color: var(--text-muted);
-        }
-        
-        .char-counter {
-            font-size: 14px;
-            color: var(--text-muted);
-            text-align: right;
-            margin-bottom: 20px;
-            font-weight: 400;
-        }
-        
-        .char-counter.limit {
-            color: var(--primary);
-            font-weight: 700;
-        }
-        
-        .post-button {
-            background-color: var(--primary);
-            color: var(--dark);
-            border: none;
-            border-radius: 0;
-            padding: 12px 30px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            float: right;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 0 10px rgba(255, 0, 153, 0.3);
-            transition: all 0.3s ease;
-            font-family: 'Roboto Mono', monospace;
-        }
-        
-        .post-button:hover {
-            background-color: var(--primary-light);
-            transform: translateY(-2px);
-            box-shadow: 0 0 15px rgba(255, 0, 153, 0.4);
-        }
-        
-        .post-button:active {
-            transform: translateY(1px);
-            box-shadow: 0 0 5px rgba(255, 0, 153, 0.4);
-        }
-        
-        .post-button:disabled {
-            background-color: #333;
-            color: #555;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
-        }
-        
-        .proposals {
-            margin-top: 40px;
-        }
-        
-        .filter-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 15px;
-        }
-        
-        .filter-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--primary);
-        }
-        
-        .sort-select {
-            padding: 10px 20px;
-            border-radius: 0;
-            border: 1px solid var(--border);
-            background-color: var(--darker);
-            color: var(--text);
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'Roboto Mono', monospace;
-        }
-        
-        .sort-select:hover {
-            border-color: var(--primary);
-        }
-        
-        .sort-select:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(255, 0, 153, 0.3);
-        }
-        
-        .proposal-card {
-            background: var(--card-bg);
-            border-radius: 0;
-            padding: 30px;
-            margin-bottom: 25px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        
-        .proposal-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0 30px rgba(255, 0, 153, 0.2);
-            border-color: var(--primary);
-        }
-        
-        .proposal-author {
-            font-weight: 600;
-            margin-bottom: 15px;
-            font-size: 1rem;
-            color: var(--primary);
-        }
-        
-        .proposal-text {
-            margin-bottom: 15px;
-            word-wrap: break-word;
-            font-size: 1.1rem;
-            line-height: 1.7;
-            color: var(--text);
-        }
-        
-        .proposal-stats {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            border-top: 1px solid var(--border);
-            padding-top: 15px;
-        }
-        
-        .vote-buttons {
-            display: flex;
-            gap: 15px;
-        }
-        
-        .vote-button {
-            background: var(--darker);
-            border: 1px solid var(--border);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            color: var(--text-muted);
-            font-size: 14px;
-            transition: all 0.2s ease;
-            padding: 6px 14px;
-            border-radius: 0;
-            font-family: 'Roboto Mono', monospace;
-        }
-        
-        .vote-button:hover {
-            background-color: var(--darker);
-            color: var(--text);
-            border-color: var(--primary);
-        }
-        
-        .vote-button.upvoted {
-            color: var(--dark);
-            background-color: var(--primary);
-            border-color: var(--primary);
-        }
-        
-        .vote-button.downvoted {
-            color: var(--primary);
-            background-color: transparent;
-            border-color: var(--primary);
-        }
-        
-        .vote-icon {
-            margin-right: 8px;
-            font-size: 16px;
-        }
-        
-        .vote-count {
-            font-weight: 600;
-        }
-        
-        .net-votes {
-            margin-left: 10px;
-            font-weight: 600;
-        }
-        
-        .net-votes.positive {
-            color: var(--primary);
-        }
-        
-        .net-votes.negative {
-            color: var(--text-muted);
-        }
-        
-        .proposal-time {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 60px 40px;
-            color: var(--text-muted);
-            background: var(--card-bg);
-            border-radius: 0;
-            border: 1px dashed var(--border);
-        }
-        
-        .empty-state p {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-        }
-        
-        .power-badge {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background-color: var(--primary);
-            color: var(--dark);
-            padding: 5px 12px;
-            border-radius: 0;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .trending-badge {
-            background-color: var(--light);
-            color: var(--dark);
-        }
-        
-        footer {
-            text-align: center;
-            margin-top: 80px;
-            padding: 30px 20px;
-            color: var(--text-muted);
-            font-size: 14px;
-            border-top: 1px solid var(--border);
-        }
-        
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-top: 20px;
-        }
-        
-        .footer-links a {
-            color: var(--primary);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-        
-        .footer-links a:hover {
-            color: var(--primary-light);
-            text-decoration: underline;
-        }
-        
-        .loading-indicator {
-            text-align: center;
-            padding: 30px;
-            color: var(--text-muted);
-        }
-        
-        .loading-spinner {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 3px solid var(--primary);
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .error-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-muted);
-            background: var(--card-bg);
-            border-radius: 0;
-            border: 1px dashed var(--primary);
-        }
-        
-        .error-state p {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            color: var(--primary);
-        }
-        
-        .retry-button {
-            background-color: var(--primary);
-            color: var(--dark);
-            border: none;
-            border-radius: 0;
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 15px;
-            font-family: 'Roboto Mono', monospace;
-        }
-
-        /* Petition Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.85);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            backdrop-filter: blur(4px);
-        }
-        
-        .modal-container {
-            background: var(--card-bg);
-            width: 90%;
-            max-width: 500px;
-            border: 1px solid var(--primary);
-            box-shadow: 0 0 30px rgba(255, 0, 153, 0.4);
-            padding: 0;
-            position: relative;
-        }
-        
-        .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .modal-header h3 {
-            margin: 0;
-            color: var(--primary);
-            font-size: 1.2rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 20px;
-            cursor: pointer;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .modal-close:hover {
-            color: var(--primary);
-        }
-        
-        .modal-body {
-            padding: 20px;
-        }
-        
-        .modal-body p {
-            margin-bottom: 20px;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-        
-        .petition-form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .form-group label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-        
-        .form-input {
-            padding: 12px;
-            background-color: var(--darker);
-            border: 1px solid var(--border);
-            color: var(--text);
-            font-size: 14px;
-            font-family: 'Roboto Mono', monospace;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(255, 0, 153, 0.2);
-        }
-        
-        .form-error {
-            color: var(--primary);
-            font-size: 0.8rem;
-            margin-top: 5px;
-        }
-        
-        .consent-checkbox {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .consent-checkbox input {
-            margin-top: 2px;
-        }
-        
-        .consent-checkbox label {
-            font-size: 0.8rem;
-            line-height: 1.4;
-            color: var(--text-muted);
-        }
-        
-        .petition-submit-btn {
-            background-color: var(--primary);
-            color: var(--dark);
-            border: none;
-            padding: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 10px;
-            transition: all 0.3s ease;
-            font-family: 'Roboto Mono', monospace;
-        }
-        
-        .petition-submit-btn:hover:not([disabled]) {
-            background-color: var(--primary-light);
-            transform: translateY(-2px);
-        }
-        
-        .petition-submit-btn:disabled {
-            background-color: #333;
-            color: #555;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .petition-badge {
-            background-color: #11cc77;
-            color: var(--dark);
-        }
-        
-        .petition-info {
-            padding: 10px 20px;
-            margin-top: -10px;
-            margin-bottom: 15px;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background-color: rgba(17, 204, 119, 0.1);
-            border-top: 1px solid rgba(17, 204, 119, 0.3);
-            border-bottom: 1px solid rgba(17, 204, 119, 0.3);
-        }
-        
-        .petition-icon {
-            color: #11cc77;
-            font-weight: bold;
-        }
-        
-        .petition-count {
-            font-weight: 600;
-            color: #11cc77;
-        }
-        
-        .info-text {
-            font-style: italic;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            line-height: 1.4;
-            margin-top: 5px;
-            border-left: 2px solid var(--border);
-            padding-left: 10px;
-        }
-        
-        /* Meme Upload Styles */
-        .meme-upload {
-            margin: 15px 0;
-            padding: 15px;
-            border: 1px solid var(--border);
-            background-color: rgba(0, 0, 0, 0.3);
-        }
-        
-        .meme-upload-label {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            background-color: var(--darker);
-            padding: 10px 15px;
-            border: 1px dashed var(--border);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-        
-        .meme-upload-label:hover {
-            border-color: var(--primary);
-            background-color: rgba(255, 0, 153, 0.1);
-        }
-        
-        .meme-upload-input {
-            display: none;
-        }
-        
-        .meme-upload-icon {
-            color: var(--primary);
-            font-size: 1.5rem;
-        }
-        
-        .meme-upload-text {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-        
-        .meme-preview {
-            width: 100%;
-            max-height: 300px;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            position: relative;
-            border: 1px solid var(--border);
-            background-color: var(--darker);
-            margin-top: 15px;
-            padding: 10px;
-        }
-        
-        .meme-preview img {
-            max-width: 100%;
-            max-height: 250px;
-            object-fit: contain;
-            margin: 10px 0;
-        }
-        
-        .meme-remove {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: var(--light);
-            border: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .meme-remove:hover {
-            background-color: var(--primary);
-        }
-        
-        .meme-upload-progress {
-            margin-top: 10px;
-            height: 6px;
-            width: 100%;
-            background-color: var(--darker);
-            overflow: hidden;
-            border-radius: 3px;
-        }
-        
-        .meme-upload-progress-bar {
-            height: 100%;
-            background-color: var(--primary);
-            width: 0;
-            transition: width 0.3s ease;
-        }
-        
-        .proposal-meme {
-            margin: 15px 0;
-            border: 1px solid var(--border);
-            padding: 10px;
-            background-color: rgba(0, 0, 0, 0.3);
-            text-align: center;
-        }
-        
-        .proposal-meme img {
-            max-width: 100%;
-            max-height: 300px;
-            object-fit: contain;
-            display: inline-block;
-        }
-        
-        @media (max-width: 600px) {
-            .container {
-                padding: 20px;
-            }
-            
-            header h1 {
-                font-size: 2.5rem;
-            }
-            
-            header, .new-proposal, .proposal-card {
-                padding: 25px;
-            }
-            
-            .filter-bar {
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-            
-            .modal-container {
-                width: 95%;
-                max-height: 90vh;
-                overflow-y: auto;
-            }
-
-            /* Add these styles to your existing CSS */
-
-.share-button {
-  background: var(--darker);
-  border: 1px solid var(--border);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  font-size: 14px;
-  transition: all 0.2s ease;
-  padding: 6px 14px;
-  border-radius: 0;
-  margin-left: 10px;
-}
-
-.share-icon {
-  display: block;
-  background-color: transparent !important;
-  mix-blend-mode: screen; /* This helps with image transparency */
-}
-
-
-/* Optional: Add a tooltip for the share button */
-.share-button {
-    position: relative;
-}
-
-.share-button::after {
-    content: 'Copy link';
-    position: absolute;
-    top: -25px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--primary);
-    color: var(--dark);
-    padding: 4px 8px;
-    font-size: 10px;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.2s ease;
-}
-
-.share-button:hover::after {
-    opacity: 1;
-    visibility: visible;
-}
-
-.share-button.copied::after {
-    content: 'Copied!';
-}
-
-/* Styles for the proposal view modal */
-.modal-container.proposal-view {
-    max-width: 600px;
-}
-
-.modal-body .proposal-text {
-    font-size: 1.3rem;
-    margin: 20px 0;
-    line-height: 1.7;
-}
-
-.share-link-container {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.share-link-field {
-    flex: 1;
-    padding: 12px;
-    background-color: var(--darker);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 14px;
-    font-family: 'Roboto Mono', monospace;
-    cursor: text;
-}
-
-.share-copy-button {
-    background-color: var(--primary);
-    color: var(--dark);
-    border: none;
-    padding: 0 15px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-    font-family: 'Roboto Mono', monospace;
-}
-
-.share-copy-button:hover {
-    background-color: var(--primary-light);
-}
-
-/* Social share buttons */
-.social-share-buttons {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.social-share-button {
-    background-color: var(--darker);
-    color: var(--text);
-    border: 1px solid var(--border);
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.social-share-button:hover {
-    background-color: var(--primary);
-    color: var(--dark);
-    border-color: var(--primary);
-}
-
-.social-icon {
-    font-size: 16px;
-}
-
-/* Animation for copying */
-@keyframes copyFlash {
-    0% { background-color: var(--primary); }
-    100% { background-color: var(--darker); }
-}
-
-.flash-animation {
-    animation: copyFlash 0.5s;
-}
-        }
-
-        /* Comments Section Styles */
-.comments-section {
-  margin-top: 15px;
-  border-top: 1px solid var(--border);
-  padding-top: 15px;
-}
-
-.comments-toggle {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  font-size: 0.9rem;
-  padding: 0;
-  margin-bottom: 10px;
-}
-
-.comments-toggle:hover {
-  color: var(--primary);
-}
-
-.comments-toggle-icon {
-  margin-right: 5px;
-  transition: transform 0.3s ease;
-}
-
-.comments-toggle[aria-expanded="true"] .comments-toggle-icon {
-  transform: rotate(90deg);
-}
-
-.comments-container {
-  display: none;
-  margin-top: 10px;
-}
-
-.comments-container.show {
-  display: block;
-}
-
-.comment-item {
-  margin-bottom: 15px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.comment-item:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-}
-
-.comment-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 5px;
-}
-
-.comment-author {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--primary);
-}
-
-.comment-time {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.comment-text {
-  font-size: 0.95rem;
-  line-height: 1.5;
-  word-wrap: break-word;
-}
-
-.comment-form {
-  display: flex;
-  margin-top: 15px;
-  margin-bottom: 10px;
-}
-
-.comment-input {
-  flex: 1;
-  padding: 10px;
-  background-color: var(--darker);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-size: 0.9rem;
-  resize: none;
-  min-height: 38px;
-  max-height: 100px;
-  overflow-y: auto;
-  font-family: 'Roboto Mono', monospace;
-}
-
-.comment-input:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-
-.comment-submit {
-  background-color: var(--primary);
-  color: var(--dark);
-  border: none;
-  padding: 0 15px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: 'Roboto Mono', monospace;
-}
-
-.comment-submit:disabled {
-  background-color: #333;
-  color: #555;
-  cursor: not-allowed;
-}
-
-.comments-loading {
-  text-align: center;
-  padding: 10px;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-
-.no-comments {
-  text-align: center;
-  padding: 15px 0;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  font-style: italic;
-}   
-
-.music-controls {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 1000;
-        background-color: var(--card-bg);
-        border: 1px solid var(--primary);
-        padding: 10px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        box-shadow: 0 0 10px rgba(255, 0, 153, 0.3);
-        transition: all 0.3s ease;
-    }
-    
-    .music-controls:hover {
-        box-shadow: 0 0 15px rgba(255, 0, 153, 0.5);
-    }
-    
-    .music-button {
-        background: none;
-        border: none;
-        color: var(--text);
-        font-size: 24px;
-        cursor: pointer;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-    }
-    
-    .music-button:hover {
-        color: var(--primary);
-        transform: scale(1.1);
-    }
-    
-    .music-label {
-        color: var(--text-muted);
-        font-size: 12px;
-        font-family: 'Roboto Mono', monospace;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg) scale(1); }
-        100% { transform: rotate(360deg) scale(1); }
-    }
-    
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
-    }
-    
-    .vinyl-spinning {
-        display: inline-block;
-        animation: spin 3s linear infinite;
-        transform-origin: center center;
-        font-size: 28px; /* Make it a bit bigger than the radio */
-    }
-    
-    .vinyl-ready {
-        display: inline-block;
-        font-size: 24px;
-        animation: pulse 2s infinite;
-    }
-
-    /* Initial prompt to click for music */
-    .music-prompt {
-        position: fixed;
-        bottom: 80px;
-        right: 20px;
-        background-color: var(--primary);
-        color: var(--dark);
-        padding: 8px 15px;
-        font-size: 12px;
-        font-family: 'Roboto Mono', monospace;
-        border-radius: 0;
-        opacity: 0;
-        transform: translateY(20px);
-        transition: all 0.3s ease;
-        pointer-events: none;
-        z-index: 1000;
-    }
-    
-    .music-prompt.visible {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-        </style>
+        <link
+            href="styles.css"
+            rel="stylesheet">
     </head>
     <body>
         <div class="container">
@@ -1282,15 +164,13 @@
             }
             
             const proposalInput = document.getElementById('proposal-input');
-if (proposalInput) {
-    proposalInput.placeholder = 'Drop your revolutionary idea here... (280 character limit)';
-}
+                if (proposalInput) {
+                    proposalInput.placeholder = 'Drop your revolutionary idea here... (280 character limit)';
+                }
 
-const postButton = document.getElementById('post-button');
-if (postButton) {
-    postButton.textContent = 'Launch Rebellion';
-}
-}
+                const postButton = document.getElementById('post-button');
+                if (postButton) postButton.innerHTML = 'Launch Rebellion';
+            }
         
         // Load user data
         async function loadUserData() {
@@ -1863,9 +743,9 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
     }
     
     if (shareButton) {
-      shareButton.addEventListener('click', () => {
-        // Copy the shareable link to clipboard
-        copyToClipboard(getShareableLink(proposal.id));
+      shareButton.addEventListener('click', async () => {
+        if ('share' in navigator) await navigator.share({ title: 'What do you think?', text: proposal.text, url: getShareableLink(proposal.id) });
+        else copyToClipboard(getShareableLink(proposal.id));
       });
     }
  
@@ -2049,107 +929,109 @@ uploadIcon.style.marginRight = '8px';
                     const proposalInput = document.getElementById('proposal-input');
                     const text = proposalInput?.value.trim();
                     
-                    if (text) {
-                        try {
-                            const trending = Math.random() > 0.8; // Randomly mark some as trending
+                    postButton.innerHTML = 'Launch Rebellion <div class="loader"></div>';
+                    
+                    // if (text) {
+                    //     try {
+                    //         const trending = Math.random() > 0.8; // Randomly mark some as trending
                             
-                            // Create the proposal first
-                            const createResponse = await fetch(`${API_BASE_URL}/proposals`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    authorId: currentUser.id,
-                                    text: text,
-                                    trending: trending
-                                })
-                            });
+                    //         // Create the proposal first
+                    //         const createResponse = await fetch(`${API_BASE_URL}/proposals`, {
+                    //             method: 'POST',
+                    //             headers: {
+                    //                 'Content-Type': 'application/json'
+                    //             },
+                    //             body: JSON.stringify({
+                    //                 authorId: currentUser.id,
+                    //                 text: text,
+                    //                 trending: trending
+                    //             })
+                    //         });
                             
-                            if (!createResponse.ok) {
-                                throw new Error('Failed to create proposal');
-                            }
+                    //         if (!createResponse.ok) {
+                    //             throw new Error('Failed to create proposal');
+                    //         }
                             
-                            const proposalData = await createResponse.json();
-                            const proposalId = proposalData.id;
+                    //         const proposalData = await createResponse.json();
+                    //         const proposalId = proposalData.id;
                             
-                            // If there's a meme, upload it
-                            if (selectedMeme) {
-                                // Show progress bar
-                                memeUpload.progress.style.display = 'block';
-                                memeUpload.progressBar.style.width = '0%';
+                    //         // If there's a meme, upload it
+                    //         if (selectedMeme) {
+                    //             // Show progress bar
+                    //             memeUpload.progress.style.display = 'block';
+                    //             memeUpload.progressBar.style.width = '0%';
                                 
-                                // Create form data for file upload
-                                const formData = new FormData();
-                                formData.append('proposalId', proposalId);
-                                formData.append('meme', selectedMeme);
+                    //             // Create form data for file upload
+                    //             const formData = new FormData();
+                    //             formData.append('proposalId', proposalId);
+                    //             formData.append('meme', selectedMeme);
                                 
-                                // Track upload progress
-                                const xhr = new XMLHttpRequest();
-                                xhr.open('POST', `${API_BASE_URL}/memes`);
+                    //             // Track upload progress
+                    //             const xhr = new XMLHttpRequest();
+                    //             xhr.open('POST', `${API_BASE_URL}/memes`);
                                 
-                                xhr.upload.addEventListener('progress', (event) => {
-                                    if (event.lengthComputable) {
-                                        const percent = (event.loaded / event.total) * 100;
-                                        memeUpload.progressBar.style.width = percent + '%';
-                                    }
-                                });
+                    //             xhr.upload.addEventListener('progress', (event) => {
+                    //                 if (event.lengthComputable) {
+                    //                     const percent = (event.loaded / event.total) * 100;
+                    //                     memeUpload.progressBar.style.width = percent + '%';
+                    //                 }
+                    //             });
                                 
-                                xhr.addEventListener('load', () => {
-                                    if (xhr.status >= 200 && xhr.status < 300) {
-                                        // Upload successful
-                                        memeUpload.progress.style.display = 'none';
+                    //             xhr.addEventListener('load', () => {
+                    //                 if (xhr.status >= 200 && xhr.status < 300) {
+                    //                     // Upload successful
+                    //                     memeUpload.progress.style.display = 'none';
                                         
-                                        // Clear the meme upload
-                                        selectedMeme = null;
-                                        memeUpload.input.value = '';
-                                        memeUpload.preview.style.display = 'none';
-                                        memeUpload.image.src = '';
+                    //                     // Clear the meme upload
+                    //                     selectedMeme = null;
+                    //                     memeUpload.input.value = '';
+                    //                     memeUpload.preview.style.display = 'none';
+                    //                     memeUpload.image.src = '';
                                         
-                                        // Show success message
-                                        animatePostSuccess();
+                    //                     // Show success message
+                    //                     animatePostSuccess();
                                         
-                                        // Clear input
-                                        proposalInput.value = '';
-                                        charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
-                                        postButton.disabled = true;
+                    //                     // Clear input
+                    //                     proposalInput.value = '';
+                    //                     charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
+                    //                     postButton.disabled = true;
                                         
-                                        // Refresh proposals
-                                        fetchProposals();
-                                    } else {
-                                        // Upload failed
-                                        memeUpload.progress.style.display = 'none';
-                                        console.error('Meme upload failed:', xhr.responseText);
-                                        showToastMessage('Failed to upload meme. Please try again.', '#ff0099');
-                                    }
-                                });
+                    //                     // Refresh proposals
+                    //                     fetchProposals();
+                    //                 } else {
+                    //                     // Upload failed
+                    //                     memeUpload.progress.style.display = 'none';
+                    //                     console.error('Meme upload failed:', xhr.responseText);
+                    //                     showToastMessage('Failed to upload meme. Please try again.', '#ff0099');
+                    //                 }
+                    //             });
                                 
-                                xhr.addEventListener('error', () => {
-                                    memeUpload.progress.style.display = 'none';
-                                    console.error('Meme upload network error');
-                                    showToastMessage('Failed to upload meme. Please check your connection.', '#ff0099');
-                                });
+                    //             xhr.addEventListener('error', () => {
+                    //                 memeUpload.progress.style.display = 'none';
+                    //                 console.error('Meme upload network error');
+                    //                 showToastMessage('Failed to upload meme. Please check your connection.', '#ff0099');
+                    //             });
                                 
-                                // Send the upload
-                                xhr.send(formData);
-                            } else {
-                                // No meme to upload, just show success and refresh
-                                // Clear input
-                                proposalInput.value = '';
-                                charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
-                                postButton.disabled = true;
+                    //             // Send the upload
+                    //             xhr.send(formData);
+                    //         } else {
+                    //             // No meme to upload, just show success and refresh
+                    //             // Clear input
+                    //             proposalInput.value = '';
+                    //             charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
+                    //             postButton.disabled = true;
                                 
-                                // Show success animation
-                                animatePostSuccess();
+                    //             // Show success animation
+                    //             animatePostSuccess();
                                 
-                                // Refresh proposals
-                                fetchProposals();
-                            }
-                        } catch (error) {
-                            console.error('Error creating proposal:', error);
-                            showErrorMessage('Failed to post your petition. Parliament might be onto us!');
-                        }
-                    }
+                    //             // Refresh proposals
+                    //             fetchProposals();
+                    //         }
+                    //     } catch (error) {
+                    //         console.error('Error creating proposal:', error);
+                    //         showErrorMessage('Failed to post your petition. Parliament might be onto us!');
+                    //     }
+                    // }
                 });
             }
         }
