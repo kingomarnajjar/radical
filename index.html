@@ -2042,12 +2042,12 @@ function createProposalViewModal(proposal) {
     <div class="proposal-stats" style="margin-top: 20px; padding-top: 20px;">
       <div class="vote-buttons">
         <button class="vote-button ${proposal.userVote === 'upvote' ? 'upvoted' : ''}" id="modal-upvote" data-proposal-id="${proposal.id}" data-vote-type="upvote">
-          <span class="vote-icon">✓</span>
-          <span>Sign</span>
+          <span class="vote-icon">▲</span>
+        <span>${proposal.upvotes || 0}</span>
         </button>
         <button class="vote-button ${proposal.userVote === 'downvote' ? 'downvoted' : ''}" id="modal-downvote" data-proposal-id="${proposal.id}" data-vote-type="downvote">
-          <span class="vote-icon">✕</span>
-          <span>Oppose</span>
+        <span class="vote-icon">▼</span>
+        <span>${proposal.downvotes || 0}</span>
         </button>
         <span class="net-votes ${voteClass}">${netVotes > 0 ? '+' : ''}${netVotes}</span>
       </div>
