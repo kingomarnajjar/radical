@@ -1294,7 +1294,6 @@ async function handleVote(proposalId, voteType) {
 
     // TEMPORARILY DISABLED AEC VERIFICATION
     // Simply submit the vote directly regardless of vote type
-    submitVote(proposalId, voteType, voteType === 'upvote');
 
     /* Original code commented out
     // Check if user needs to provide AEC details for petition signing
@@ -1313,45 +1312,202 @@ async function handleVote(proposalId, voteType) {
         submitVote(proposalId, voteType, false);
     }
     */
-}
-        
-        // Submit vote with petition data if applicable
-        async function submitVote(proposalId, voteType, isPetition = false, petitionDetails = null) {
-            try {
-                const voteData = {
-                    proposalId: proposalId,
-                    userId: currentUser.id,
-                    voteType: voteType
-                };
-                
-                // Add petition data if this is a petition signature
-                if (isPetition && petitionDetails) {
-                    voteData.isPetition = true;
-                    voteData.petitionDetails = petitionDetails;
-                }
-                
-                const response = await fetch(`${API_BASE_URL}/votes`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(voteData),
-                    mode: 'cors',
-                    credentials: 'same-origin'
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to submit vote');
-                }
-                
-                // Refresh proposals to show updated votes
-                fetchProposals();
-            } catch (error) {
-                console.error('Error voting:', error);
-                showErrorMessage('Hmm, your vote didn\'t count. That\'s a bit suspicious, isn\'t it?');
+
+    // Find the proposal card
+    const proposalCards = document.querySelectorAll(`.proposal-card`);
+    let proposalCard = null;
+    
+    for (const card of proposalCards) {
+        if (card.querySelector(`[data-proposal-id="${proposalId}"]`)) {
+            proposalCard = card;
+            break;
+        }
+    }
+    
+    if (!proposalCard) return;
+    
+    // Get the buttons and count elements
+    const upvoteButton = proposalCard.querySelector(`[data-vote-type="upvote"]`);
+    const downvoteButton = proposalCard.querySelector(`[data-vote-type="downvote"]`);
+    const upvoteCount = upvoteButton.querySelector('span:nth-child(2)');
+    const downvoteCount = downvoteButton.querySelector('span:nth-child(2)');
+    const netVotesElement = proposalCard.querySelector('.net-votes');
+    
+    // Get current state
+    const wasUpvoted = upvoteButton.classList.contains('upvoted');
+    const wasDownvoted = downvoteButton.classList.contains('downvoted');
+    
+    // Get current counts
+    let upvotes = parseInt(upvoteCount.textContent);
+    let downvotes = parseInt(downvoteCount.textContent);
+    
+    // Update UI optimistically
+    if (voteType === 'upvote') {
+        if (wasUpvoted) {
+            // Toggle off upvote
+            upvoteButton.classList.remove('upvoted');
+            upvoteCount.textContent = upvotes - 1;
+        } else {
+            // Add upvote
+            upvoteButton.classList.add('upvoted');
+            upvoteCount.textContent = upvotes + 1;
+            
+            // If was downvoted, remove downvote
+            if (wasDownvoted) {
+                downvoteButton.classList.remove('downvoted');
+                downvoteCount.textContent = downvotes - 1;
             }
         }
+    } else if (voteType === 'downvote') {
+        if (wasDownvoted) {
+            // Toggle off downvote
+            downvoteButton.classList.remove('downvoted');
+            downvoteCount.textContent = downvotes - 1;
+        } else {
+            // Add downvote
+            downvoteButton.classList.add('downvoted');
+            downvoteCount.textContent = downvotes + 1;
+            
+            // If was upvoted, remove upvote
+            if (wasUpvoted) {
+                upvoteButton.classList.remove('upvoted');
+                upvoteCount.textContent = upvotes - 1;
+            }
+        }
+    }
+    
+    // Update net votes
+    const newUpvotes = parseInt(upvoteCount.textContent);
+    const newDownvotes = parseInt(downvoteCount.textContent);
+    const netVotes = newUpvotes - newDownvotes;
+    
+    netVotesElement.textContent = netVotes > 0 ? `+${netVotes}` : netVotes;
+    netVotesElement.className = `net-votes ${netVotes > 0 ? 'positive' : netVotes < 0 ? 'negative' : ''}`;
+    
+    // Also update the modal if it's open and showing this proposal
+    updateModalVoteUI(proposalId, voteType, wasUpvoted, wasDownvoted);
+    
+    // Submit vote to server in the background
+    try {
+        await submitVoteToServer(proposalId, voteType, voteType === 'upvote');
+    } catch (error) {
+        console.error('Error voting:', error);
+        showToastMessage('Hmm, your vote didn\'t count. That\'s a bit suspicious, isn\'t it?', '#ff0099');
         
+        // Revert UI changes
+        if (voteType === 'upvote') {
+            upvoteButton.classList.toggle('upvoted', wasUpvoted);
+            upvoteCount.textContent = upvotes;
+        } else if (voteType === 'downvote') {
+            downvoteButton.classList.toggle('downvoted', wasDownvoted);
+            downvoteCount.textContent = downvotes;
+        }
+        
+        // Restore net votes
+        const originalNetVotes = upvotes - downvotes;
+        netVotesElement.textContent = originalNetVotes > 0 ? `+${originalNetVotes}` : originalNetVotes;
+        netVotesElement.className = `net-votes ${originalNetVotes > 0 ? 'positive' : originalNetVotes < 0 ? 'negative' : ''}`;
+    }
+}
+
+// New function to update vote UI in the modal (if open)
+function updateModalVoteUI(proposalId, voteType, wasUpvoted, wasDownvoted) {
+    const modalUpvoteButton = document.getElementById('modal-upvote');
+    const modalDownvoteButton = document.getElementById('modal-downvote');
+    
+    if (!modalUpvoteButton || !modalDownvoteButton) return;
+    
+    // Make sure we're updating the right proposal
+    if (modalUpvoteButton.getAttribute('data-proposal-id') !== proposalId) return;
+    
+    const modalUpvoteCount = modalUpvoteButton.querySelector('span:nth-child(2)');
+    const modalDownvoteCount = modalDownvoteButton.querySelector('span:nth-child(2)');
+    const modalNetVotesElement = document.querySelector('.modal-body .net-votes');
+    
+    if (!modalUpvoteCount || !modalDownvoteCount || !modalNetVotesElement) return;
+    
+    let upvotes = parseInt(modalUpvoteCount.textContent);
+    let downvotes = parseInt(modalDownvoteCount.textContent);
+    
+    // Update UI in the modal
+    if (voteType === 'upvote') {
+        if (wasUpvoted) {
+            modalUpvoteButton.classList.remove('upvoted');
+            modalUpvoteCount.textContent = upvotes - 1;
+        } else {
+            modalUpvoteButton.classList.add('upvoted');
+            modalUpvoteCount.textContent = upvotes + 1;
+            
+            if (wasDownvoted) {
+                modalDownvoteButton.classList.remove('downvoted');
+                modalDownvoteCount.textContent = downvotes - 1;
+            }
+        }
+    } else if (voteType === 'downvote') {
+        if (wasDownvoted) {
+            modalDownvoteButton.classList.remove('downvoted');
+            modalDownvoteCount.textContent = downvotes - 1;
+        } else {
+            modalDownvoteButton.classList.add('downvoted');
+            modalDownvoteCount.textContent = downvotes + 1;
+            
+            if (wasUpvoted) {
+                modalUpvoteButton.classList.remove('upvoted');
+                modalUpvoteCount.textContent = upvotes - 1;
+            }
+        }
+    }
+    
+    // Update net votes in modal
+    const newUpvotes = parseInt(modalUpvoteCount.textContent);
+    const newDownvotes = parseInt(modalDownvoteCount.textContent);
+    const netVotes = newUpvotes - newDownvotes;
+    
+    modalNetVotesElement.textContent = netVotes > 0 ? `+${netVotes}` : netVotes;
+    modalNetVotesElement.className = `net-votes ${netVotes > 0 ? 'positive' : netVotes < 0 ? 'negative' : ''}`;
+}
+
+// New function to submit vote to server
+async function submitVoteToServer(proposalId, voteType, isPetition = false, petitionDetails = null) {
+    const voteData = {
+        proposalId: proposalId,
+        userId: currentUser.id,
+        voteType: voteType
+    };
+    
+    // Add petition data if this is a petition signature
+    if (isPetition && petitionDetails) {
+        voteData.isPetition = true;
+        voteData.petitionDetails = petitionDetails;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/votes`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(voteData),
+        mode: 'cors',
+        credentials: 'same-origin'
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to submit vote');
+    }
+    
+    return await response.json();
+}
+
+// Replace the old submitVote function
+async function submitVote(proposalId, voteType, isPetition = false, petitionDetails = null) {
+    try {
+        return await submitVoteToServer(proposalId, voteType, isPetition, petitionDetails);
+    } catch (error) {
+        console.error('Error voting:', error);
+        showToastMessage('Hmm, your vote didn\'t count. That\'s a bit suspicious, isn\'t it?', '#ff0099');
+        throw error;
+    }
+}
         // Format date
         function formatDate(timestamp) {
             const now = new Date();
