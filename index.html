@@ -712,6 +712,18 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
     </div>
     <div class="proposal-time">${formatDate(proposal.timestamp)}</div>
   </div>
+    <div class="comments-section">
+    <button class="comments-toggle" id="comments-toggle-${proposal.id}">
+      <span class="comments-toggle-icon">▶</span> 0 comments
+    </button>
+    <div class="comments-container" id="comments-container-${proposal.id}" style="display: none;">
+      <div class="comments-list" id="comments-list-${proposal.id}"></div>
+      <div class="comment-form">
+        <textarea class="comment-input" id="comment-input-${proposal.id}" placeholder="Add your comment..."></textarea>
+        <button class="comment-submit" data-proposal-id="${proposal.id}">Submit</button>
+      </div>
+    </div>
+  </div>
 `;
     
     proposalsContainer.appendChild(proposalButton);
@@ -744,7 +756,45 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
         else copyToClipboard(getShareableLink(proposal.id));
       });
     }
+ 
+
+// Add comments toggle functionality
+const commentsToggle = document.getElementById(`comments-toggle-${proposal.id}`);
+const commentsContainer = document.getElementById(`comments-container-${proposal.id}`);
+
+if (commentsToggle && commentsContainer) {
+  commentsToggle.addEventListener('click', function() {
+    const isVisible = commentsContainer.style.display !== 'none';
+    
+    if (isVisible) {
+      commentsContainer.style.display = 'none';
+      this.querySelector('.comments-toggle-icon').textContent = '▶';
+    } else {
+      commentsContainer.style.display = 'block';
+      this.querySelector('.comments-toggle-icon').textContent = '▼';
+      loadComments(proposal.id);
+    }
   });
+}
+
+// Add event listener for comment submission
+const commentSubmit = document.querySelector(`.comment-submit[data-proposal-id="${proposal.id}"]`);
+if (commentSubmit) {
+  commentSubmit.addEventListener('click', function() {
+    const commentInput = document.getElementById(`comment-input-${proposal.id}`);
+    const commentText = commentInput.value.trim();
+    
+    if (commentText) {
+      submitComment(proposal.id, commentText);
+      commentInput.value = '';
+    }
+  });
+}
+
+// Update comment count
+updateCommentCount(proposal.id);
+
+});
 }
 
         // Create meme upload elements
@@ -1697,8 +1747,6 @@ function addCommentsToProposal(proposalCard, proposalId) {
   const commentsToggle = document.createElement('button');
   commentsToggle.className = 'comments-toggle';
   commentsToggle.setAttribute('aria-expanded', 'false');
-  commentsToggle.innerHTML = '<span class="comments-toggle-icon">▶</span> x comments';
-  commentsToggle.onclick="event.stopPropagation(); event.preventDefault();" 
   
   const commentsContainer = document.createElement('div');
   commentsContainer.className = 'comments-container';
@@ -1748,77 +1796,177 @@ function addCommentsToProposal(proposalCard, proposalId) {
     toggleComments(proposalId, commentsToggle);
   });
 }
-  // Music player functionality
-  document.addEventListener('DOMContentLoaded', () => {
-        // Set up variables
-        const backgroundMusic = document.getElementById('background-music');
-        const musicControls = document.getElementById('music-controls');
-        const musicToggle = document.getElementById('music-toggle');
-        const musicPrompt = document.getElementById('music-prompt');
-        let musicInitialized = false;
-        
-        // Show the prompt after a delay
-        setTimeout(() => {
-            musicPrompt.classList.add('visible');
-        }, 3000);
-        
-        // Audio file URL - this should point to your audio file in R2
-        const audioUrl = 'https://radical.omar-c29.workers.dev/memes/steppingout.mp3';
-        
-        // Initialize music on first click anywhere on the page
-        document.addEventListener('click', initializeMusic, { once: true });
-        
-        function initializeMusic() {
-            if (musicInitialized) return;
-            
-            // Set the audio source
-            backgroundMusic.src = audioUrl;
-            
-            // Load the audio
-            backgroundMusic.load();
-            
-            // Play the audio (this may fail due to browser autoplay policies)
-            playAudio();
-            
-            // Show the music controls
-            musicControls.style.display = 'flex';
-            
-            // Hide the prompt
-            musicPrompt.classList.remove('visible');
-            
-            // Add event listener for the toggle button
-            musicToggle.addEventListener('click', toggleMusic);
-            
-            // Mark as initialized
-            musicInitialized = true;
-            
-            // Remove the initial click listener
-            document.removeEventListener('click', initializeMusic);
-        }
-        
-        function playAudio() {
-        backgroundMusic.play().then(() => {
-            // Use a span wrapper to apply the animation
-            musicToggle.innerHTML = '<span class="vinyl-spinning">📀</span>';
-            musicToggle.classList.remove('pulse');
-        }).catch(error => {
-            console.error('Failed to play audio:', error);
-            musicToggle.innerHTML = '<span class="vinyl-ready">📻</span>';
-            musicToggle.classList.add('pulse');
-        });
+ // Music player functionality
+document.addEventListener('DOMContentLoaded', () => {
+  // Set up variables
+  const backgroundMusic = document.getElementById('background-music');
+  const musicControls = document.getElementById('music-controls');
+  const musicToggle = document.getElementById('music-toggle');
+  const musicPrompt = document.getElementById('music-prompt');
+  let musicInitialized = false;
+  
+  // Make sure the musicPrompt element exists
+  if (!musicPrompt) {
+    console.error("Music prompt element not found!");
+    return;
+  }
+  
+  // Make sure it's visible and clickable
+  musicPrompt.style.opacity = '1';
+  musicPrompt.style.pointerEvents = 'auto';
+  musicPrompt.style.cursor = 'pointer';
+  musicPrompt.classList.add('visible');
+  
+  // Log when the element is clicked for debugging
+  console.log("Music prompt element found, adding click listener");
+  
+  // Audio file URL - this should point to your audio file in R2
+  const audioUrl = 'https://radical.omar-c29.workers.dev/memes/steppingout.mp3';
+  
+  // Initialize music only when the "hit me" button is clicked
+  musicPrompt.addEventListener('click', function(e) {
+    console.log("Hit me button clicked!");
+    e.preventDefault();
+    e.stopPropagation();
+    initializeMusic();
+  });
+  
+  function initializeMusic() {
+    console.log("Initializing music...");
+    if (musicInitialized) {
+      console.log("Music already initialized, returning");
+      return;
     }
     
-    function toggleMusic() {
-        if (backgroundMusic.paused) {
-            playAudio();
-        } else {
-            backgroundMusic.pause();
-            musicToggle.innerHTML = '<span class="vinyl-ready">📻</span>';
-            musicToggle.classList.add('pulse');
-        }
-    }
+    // Set the audio source
+    backgroundMusic.src = audioUrl;
+    console.log("Set audio source to:", audioUrl);
     
+    // Load the audio
+    backgroundMusic.load();
+    console.log("Audio loaded");
+    
+    try {
+      // Play the audio (this may fail due to browser autoplay policies)
+      console.log("Attempting to play audio...");
+      playAudio();
+      
+      // Show the music controls
+      musicControls.style.display = 'flex';
+      
+      // Hide the prompt
+      musicPrompt.style.display = 'none';
+      
+      // Add event listener for the toggle button
+      musicToggle.addEventListener('click', toggleMusic);
+      
+      // Mark as initialized
+      musicInitialized = true;
+      
+      console.log("Music initialized successfully");
+    } catch (error) {
+      console.error("Error initializing music:", error);
+    }
+  }
+  
+  function playAudio() {
+    console.log("Playing audio...");
+    backgroundMusic.play().then(() => {
+      console.log("Audio playing successfully");
+      // Use a span wrapper to apply the animation
+      musicToggle.innerHTML = '<span class="vinyl-spinning">📀</span>';
+      musicToggle.classList.remove('pulse');
+    }).catch(error => {
+      console.error('Failed to play audio:', error);
+      musicToggle.innerHTML = '<span class="vinyl-ready">📻</span>';
+      musicToggle.classList.add('pulse');
     });
+  }
+  
+  function toggleMusic() {
+    if (backgroundMusic.paused) {
+      playAudio();
+    } else {
+      backgroundMusic.pause();
+      musicToggle.innerHTML = '<span class="vinyl-ready">📻</span>';
+      musicToggle.classList.add('pulse');
+    }
+  }
+});
+
+    // Add these functions outside your renderProposals function
+
+function updateCommentCount(proposalId) {
+  const commentsToggle = document.getElementById(`comments-toggle-${proposalId}`);
+  if (!commentsToggle) return;
+  
+  fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
+    .then(response => response.json())
+    .then(comments => {
+      const commentCount = comments.length;
+      const commentText = commentCount === 1 ? 'comment' : 'comments';
+      commentsToggle.innerHTML = `<span class="comments-toggle-icon">▶</span> ${commentCount} ${commentText}`;
+    })
+    .catch(error => {
+      commentsToggle.innerHTML = `<span class="comments-toggle-icon">▶</span> 0 comments`;
+    });
+}
+
+function loadComments(proposalId) {
+  const commentsList = document.getElementById(`comments-list-${proposalId}`);
+  if (!commentsList) return;
+  
+  commentsList.innerHTML = '<div class="comments-loading">Loading comments...</div>';
+  
+  fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
+    .then(response => response.json())
+    .then(comments => {
+      if (comments.length === 0) {
+        commentsList.innerHTML = '<div class="no-comments">No comments yet. Be the first to comment!</div>';
+        return;
+      }
+      
+      commentsList.innerHTML = '';
+      comments.forEach(comment => {
+        const commentElement = document.createElement('div');
+        commentElement.className = 'comment';
+        commentElement.innerHTML = `
+          <div class="comment-header">
+            <span class="comment-author">${comment.user_name}</span>
+            <span class="comment-time">${formatDate(comment.timestamp)}</span>
+          </div>
+          <div class="comment-body">${comment.comment_text}</div>
+        `;
+        commentsList.appendChild(commentElement);
+      });
+    })
+    .catch(error => {
+      commentsList.innerHTML = '<div class="comments-error">Failed to load comments.</div>';
+    });
+}
+
+function submitComment(proposalId, commentText) {
+  fetch(`${API_BASE_URL}/comments`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      proposalId: proposalId,
+      userId: currentUser.id,
+      commentText: commentText
+    })
+  })
+    .then(response => response.json())
+    .then(data => {
+      loadComments(proposalId);
+      updateCommentCount(proposalId);
+      showToastMessage('Comment posted!', '#11cc77');
+    })
+    .catch(error => {
+      showToastMessage('Failed to post comment', '#ff0099');
+    });
+}
         </script>
 
         <div class="music-prompt" id="music-prompt">hit me</div>
@@ -1832,5 +1980,6 @@ function addCommentsToProposal(proposalCard, proposalId) {
         <audio id="background-music" loop>
             <!-- The src will be set via JavaScript after user interaction -->
         </audio>
+        <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "e9dafdf5d3814f3fbbbc98a67b7e5519"}'></script><!-- End Cloudflare Web Analytics -->
     </body>
 </html>
