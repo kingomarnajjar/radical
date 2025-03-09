@@ -713,7 +713,7 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
     <div class="proposal-time">${formatDate(proposal.timestamp)}</div>
   </div>
     <div class="comments-section">
-    <button class="comments-toggle" id="comments-toggle-${proposal.id}">
+    <button class="comments-toggle" id="comments-toggle-${proposal.id}" onclick="event.stopPropagation(); event.preventDefault();">
       <span class="comments-toggle-icon">▶</span> 0 comments
     </button>
     <div class="comments-container" id="comments-container-${proposal.id}" style="display: none;">
