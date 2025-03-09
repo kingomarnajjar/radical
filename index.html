@@ -164,15 +164,18 @@
             }
             
             const proposalInput = document.getElementById('proposal-input');
-if (proposalInput) {
-    proposalInput.placeholder = 'Drop your revolutionary idea here... (280 character limit)';
-}
+                if (proposalInput) {
+                    proposalInput.placeholder = 'Drop your revolutionary idea here... (280 character limit)';
+                }
 
-const postButton = document.getElementById('post-button');
-if (postButton) {
-    postButton.textContent = 'Launch Rebellion';
-}
-}
+                const postButton = document.getElementById('post-button');
+                if (postButton) {
+                    const loadingIndicator = document.createElement('div');
+                    loadingIndicator.classList.add('lds-dual-ring')
+                    postButton.appendChild(loadingIndicator);
+                    postButton.innerText = 'Launch Rebellion';
+                }
+            }
         
         // Load user data
         async function loadUserData() {
