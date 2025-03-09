@@ -169,12 +169,7 @@
                 }
 
                 const postButton = document.getElementById('post-button');
-                if (postButton) {
-                    const loadingIndicator = document.createElement('div');
-                    loadingIndicator.classList.add('lds-dual-ring')
-                    postButton.appendChild(loadingIndicator);
-                    postButton.innerText = 'Launch Rebellion';
-                }
+                if (postButton) postButton.innerHTML = 'Launch Rebellion';
             }
         
         // Load user data
@@ -884,107 +879,109 @@ uploadIcon.style.marginRight = '8px';
                     const proposalInput = document.getElementById('proposal-input');
                     const text = proposalInput?.value.trim();
                     
-                    if (text) {
-                        try {
-                            const trending = Math.random() > 0.8; // Randomly mark some as trending
+                    postButton.innerHTML = 'Launch Rebellion <div class="loader"></div>';
+                    
+                    // if (text) {
+                    //     try {
+                    //         const trending = Math.random() > 0.8; // Randomly mark some as trending
                             
-                            // Create the proposal first
-                            const createResponse = await fetch(`${API_BASE_URL}/proposals`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    authorId: currentUser.id,
-                                    text: text,
-                                    trending: trending
-                                })
-                            });
+                    //         // Create the proposal first
+                    //         const createResponse = await fetch(`${API_BASE_URL}/proposals`, {
+                    //             method: 'POST',
+                    //             headers: {
+                    //                 'Content-Type': 'application/json'
+                    //             },
+                    //             body: JSON.stringify({
+                    //                 authorId: currentUser.id,
+                    //                 text: text,
+                    //                 trending: trending
+                    //             })
+                    //         });
                             
-                            if (!createResponse.ok) {
-                                throw new Error('Failed to create proposal');
-                            }
+                    //         if (!createResponse.ok) {
+                    //             throw new Error('Failed to create proposal');
+                    //         }
                             
-                            const proposalData = await createResponse.json();
-                            const proposalId = proposalData.id;
+                    //         const proposalData = await createResponse.json();
+                    //         const proposalId = proposalData.id;
                             
-                            // If there's a meme, upload it
-                            if (selectedMeme) {
-                                // Show progress bar
-                                memeUpload.progress.style.display = 'block';
-                                memeUpload.progressBar.style.width = '0%';
+                    //         // If there's a meme, upload it
+                    //         if (selectedMeme) {
+                    //             // Show progress bar
+                    //             memeUpload.progress.style.display = 'block';
+                    //             memeUpload.progressBar.style.width = '0%';
                                 
-                                // Create form data for file upload
-                                const formData = new FormData();
-                                formData.append('proposalId', proposalId);
-                                formData.append('meme', selectedMeme);
+                    //             // Create form data for file upload
+                    //             const formData = new FormData();
+                    //             formData.append('proposalId', proposalId);
+                    //             formData.append('meme', selectedMeme);
                                 
-                                // Track upload progress
-                                const xhr = new XMLHttpRequest();
-                                xhr.open('POST', `${API_BASE_URL}/memes`);
+                    //             // Track upload progress
+                    //             const xhr = new XMLHttpRequest();
+                    //             xhr.open('POST', `${API_BASE_URL}/memes`);
                                 
-                                xhr.upload.addEventListener('progress', (event) => {
-                                    if (event.lengthComputable) {
-                                        const percent = (event.loaded / event.total) * 100;
-                                        memeUpload.progressBar.style.width = percent + '%';
-                                    }
-                                });
+                    //             xhr.upload.addEventListener('progress', (event) => {
+                    //                 if (event.lengthComputable) {
+                    //                     const percent = (event.loaded / event.total) * 100;
+                    //                     memeUpload.progressBar.style.width = percent + '%';
+                    //                 }
+                    //             });
                                 
-                                xhr.addEventListener('load', () => {
-                                    if (xhr.status >= 200 && xhr.status < 300) {
-                                        // Upload successful
-                                        memeUpload.progress.style.display = 'none';
+                    //             xhr.addEventListener('load', () => {
+                    //                 if (xhr.status >= 200 && xhr.status < 300) {
+                    //                     // Upload successful
+                    //                     memeUpload.progress.style.display = 'none';
                                         
-                                        // Clear the meme upload
-                                        selectedMeme = null;
-                                        memeUpload.input.value = '';
-                                        memeUpload.preview.style.display = 'none';
-                                        memeUpload.image.src = '';
+                    //                     // Clear the meme upload
+                    //                     selectedMeme = null;
+                    //                     memeUpload.input.value = '';
+                    //                     memeUpload.preview.style.display = 'none';
+                    //                     memeUpload.image.src = '';
                                         
-                                        // Show success message
-                                        animatePostSuccess();
+                    //                     // Show success message
+                    //                     animatePostSuccess();
                                         
-                                        // Clear input
-                                        proposalInput.value = '';
-                                        charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
-                                        postButton.disabled = true;
+                    //                     // Clear input
+                    //                     proposalInput.value = '';
+                    //                     charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
+                    //                     postButton.disabled = true;
                                         
-                                        // Refresh proposals
-                                        fetchProposals();
-                                    } else {
-                                        // Upload failed
-                                        memeUpload.progress.style.display = 'none';
-                                        console.error('Meme upload failed:', xhr.responseText);
-                                        showToastMessage('Failed to upload meme. Please try again.', '#ff0099');
-                                    }
-                                });
+                    //                     // Refresh proposals
+                    //                     fetchProposals();
+                    //                 } else {
+                    //                     // Upload failed
+                    //                     memeUpload.progress.style.display = 'none';
+                    //                     console.error('Meme upload failed:', xhr.responseText);
+                    //                     showToastMessage('Failed to upload meme. Please try again.', '#ff0099');
+                    //                 }
+                    //             });
                                 
-                                xhr.addEventListener('error', () => {
-                                    memeUpload.progress.style.display = 'none';
-                                    console.error('Meme upload network error');
-                                    showToastMessage('Failed to upload meme. Please check your connection.', '#ff0099');
-                                });
+                    //             xhr.addEventListener('error', () => {
+                    //                 memeUpload.progress.style.display = 'none';
+                    //                 console.error('Meme upload network error');
+                    //                 showToastMessage('Failed to upload meme. Please check your connection.', '#ff0099');
+                    //             });
                                 
-                                // Send the upload
-                                xhr.send(formData);
-                            } else {
-                                // No meme to upload, just show success and refresh
-                                // Clear input
-                                proposalInput.value = '';
-                                charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
-                                postButton.disabled = true;
+                    //             // Send the upload
+                    //             xhr.send(formData);
+                    //         } else {
+                    //             // No meme to upload, just show success and refresh
+                    //             // Clear input
+                    //             proposalInput.value = '';
+                    //             charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
+                    //             postButton.disabled = true;
                                 
-                                // Show success animation
-                                animatePostSuccess();
+                    //             // Show success animation
+                    //             animatePostSuccess();
                                 
-                                // Refresh proposals
-                                fetchProposals();
-                            }
-                        } catch (error) {
-                            console.error('Error creating proposal:', error);
-                            showErrorMessage('Failed to post your petition. Parliament might be onto us!');
-                        }
-                    }
+                    //             // Refresh proposals
+                    //             fetchProposals();
+                    //         }
+                    //     } catch (error) {
+                    //         console.error('Error creating proposal:', error);
+                    //         showErrorMessage('Failed to post your petition. Parliament might be onto us!');
+                    //     }
+                    // }
                 });
             }
         }
