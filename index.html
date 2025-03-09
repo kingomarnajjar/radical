@@ -4,7 +4,32 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>RADICAL - Australia's Democratic Revolution</title>
+        <!-- <meta property="og:image" content="${getShareableImageUrl(proposal)}">
+        <meta property="twitter:image" content="${getShareableImageUrl(proposal)}"> -->
         <link rel="icon" href="https://radical.omar-c29.workers.dev/memes/favicon.jpg" type="image/png">
+        <!-- Primary Meta Tags -->
+        <meta property="og:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG">
+<meta name="title" content="RADICAL - The Underground Parliament">
+<meta name="description" content="Post dank policy memes, build movements, hack the system. Seize democracy from the elites.">
+<meta name="theme-color" content="#ff0099">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://theradicalparty.com/">
+<meta property="og:title" content="RADICAL - The Underground Parliament">
+<meta property="og:description" content="Post dank policy memes, build movements, hack the system. Take back control.">
+<meta property="og:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG">
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://theradicalparty.com/">
+<meta property="twitter:title" content="RADICAL - Democratic Revolution">
+<meta property="twitter:description" content="The underground parliament where we hack the system.">
+<meta property="twitter:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG">
+
+<!-- App-like behavior for mobile -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link
@@ -2157,6 +2182,28 @@ function createProposalViewModal(proposal) {
       window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
     });
   }
+}
+
+function getShareableImageUrl(proposal) {
+  // Base Cloudinary URL (you would need to sign up for Cloudinary)
+  const cloudinaryUrl = "https://res.cloudinary.com/your-cloud-name/image/fetch";
+  
+  // Encode the proposal text for URL
+  const encodedText = encodeURIComponent(proposal.text);
+  const encodedAuthor = encodeURIComponent(proposal.author_name);
+  
+  // Transformation parameters for text overlay
+  const textParams = 
+    "l_text:Roboto_32_bold:" + encodedText + 
+    ",co_white,w_500,c_fit/" +
+    "l_text:Roboto_20:Posted%20by%20" + encodedAuthor + 
+    ",co_rgb:aaaaaa,g_north_west,y_80,x_50";
+  
+  // URL of your template image in R2
+  const templateUrl = encodeURIComponent("https://radical.omar-c29.workers.dev/memes/petition-template.png");
+  
+  // Combine everything
+  return `${cloudinaryUrl}/${textParams}/${templateUrl}`;
 }
         </script>
     </body>
