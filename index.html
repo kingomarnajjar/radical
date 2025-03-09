@@ -719,8 +719,8 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
     <div class="comments-container" id="comments-container-${proposal.id}" style="display: none;">
       <div class="comments-list" id="comments-list-${proposal.id}"></div>
       <div class="comment-form">
-        <textarea class="comment-input" id="comment-input-${proposal.id}" placeholder="Add your comment..."></textarea>
-        <button class="comment-submit" data-proposal-id="${proposal.id}">Submit</button>
+        <textarea class="comment-input" id="comment-input-${proposal.id}" placeholder="Add your comment..." onclick="event.stopPropagation(); event.preventDefault();"></textarea>
+        <button class="comment-submit" data-proposal-id="${proposal.id}" onclick="event.stopPropagation(); event.preventDefault();">Submit</button>
       </div>
     </div>
   </div>
