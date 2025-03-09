@@ -1366,21 +1366,35 @@ function createProposalViewModal(proposal) {
         <input type="text" class="share-link-field" value="${getShareableLink(proposal.id)}" readonly>
         <button class="share-copy-button" id="modal-copy-link">Copy</button>
       </div>
-      
-      <div class="social-share-buttons">
-        <button class="social-share-button" id="share-twitter">
-          <span class="social-icon">🐦</span>
-          <span>Twitter</span>
-        </button>
-        <button class="social-share-button" id="share-facebook">
-          <span class="social-icon">📘</span>
-          <span>Facebook</span>
-        </button>
-        <button class="social-share-button" id="share-whatsapp">
-          <span class="social-icon">📱</span>
-          <span>WhatsApp</span>
-        </button>
-      </div>
+      `
+      +
+      (
+        ('share' in navigator) ?`
+            <div class="social-share-buttons">
+                <button class="social-share-button" onclick()="navigator.share({ title: 'What do you think?', text: '${proposal.text}', url: '${getShareableLink(proposal.id)}' })">
+                <span>Share</span>
+                </button>
+            </div>
+            `
+        : `
+        <div class="social-share-buttons">
+            <button class="social-share-button" id="share-twitter">
+            <span class="social-icon">🐦</span>
+            <span>Twitter</span>
+            </button>
+            <button class="social-share-button" id="share-facebook">
+            <span class="social-icon">📘</span>
+            <span>Facebook</span>
+            </button>
+            <button class="social-share-button" id="share-whatsapp">
+            <span class="social-icon">📱</span>
+            <span>WhatsApp</span>
+            </button>
+        </div>
+        `
+      )
+      +
+      `
     </div>
     `;
   modalBody.innerHTML += `
