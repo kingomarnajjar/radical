@@ -973,9 +973,11 @@
         
         // Catchy political slogans for placeholder text
         const placeholders = [
-            "Your petition idea for Australia? (280 character limit)",
-            "Got a hot take on Australian politics? (280 character limit)",
-            "Parliament failed the vibe check. Your solution? (280 character limit)",
+            "Drop your revolutionary idea here... (280 character limit)",
+            "How would you hack Australia's system? (280 character limit)",
+            "What dank policy should replace the current shit? (280 character limit)",
+            "Your move to seize democracy from the elites? (280 character limit)",
+            "Post the change that would make Australia actually based (280 character limit)",
             "What would make Australia actually slap? (280 character limit)",
             "Drop your 🔥 policy idea here (280 character limit)"
         ];
@@ -1012,11 +1014,11 @@
         // Update UI text for petition system
         function updateUIText() {
             const tagline = document.querySelector('.tagline');
-            if (tagline) tagline.textContent = 'Petition, Vote, Veto';
+            if (tagline) tagline.textContent = 'Radicalise, Vote, Veto';
             
             const headerDesc = document.querySelector('header p');
             if (headerDesc) {
-                headerDesc.textContent = 'Australia\'s direct democracy movement. Create and sign official petitions, vote on proposals, take back control.';
+                headerDesc.textContent = 'The underground parliament. Post dank memes, build movements, hack the system. Take back control.';
             }
             
             const filterTitle = document.querySelector('.filter-title');
@@ -1031,15 +1033,14 @@
             }
             
             const proposalInput = document.getElementById('proposal-input');
-            if (proposalInput) {
-                proposalInput.placeholder = 'Your petition idea for Australia? (280 character limit)';
-            }
-            
-            const postButton = document.getElementById('post-button');
-            if (postButton) {
-                postButton.textContent = 'Create Petition';
-            }
-        }
+if (proposalInput) {
+    proposalInput.placeholder = 'Drop your revolutionary idea here... (280 character limit)';
+}
+
+const postButton = document.getElementById('post-button');
+if (postButton) {
+    postButton.textContent = 'Launch Rebellion';
+}
         
         // Load user data
         async function loadUserData() {
