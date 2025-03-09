@@ -731,9 +731,9 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
     }
     
     if (shareButton) {
-      shareButton.addEventListener('click', () => {
-        // Copy the shareable link to clipboard
-        copyToClipboard(getShareableLink(proposal.id));
+      shareButton.addEventListener('click', async () => {
+        if ('share' in navigator) await navigator.share({ title: 'What do you think?', text: proposal.text, url: getShareableLink(proposal.id) });
+        else copyToClipboard(getShareableLink(proposal.id));
       });
     }
   });
