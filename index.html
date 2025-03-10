@@ -998,6 +998,9 @@ uploadIcon.style.marginRight = '8px';
                                         memeUpload.input.value = '';
                                         memeUpload.preview.style.display = 'none';
                                         memeUpload.image.src = '';
+
+                                        //Clear Loader
+                                        postButton.innerHTML = 'Launch Rebellion';
                                         
                                         // Show success message
                                         animatePostSuccess();
@@ -1028,6 +1031,7 @@ uploadIcon.style.marginRight = '8px';
                             } else {
                                 // No meme to upload, just show success and refresh
                                 // Clear input
+                                postButton.innerHTML = 'Launch Rebellion';
                                 proposalInput.value = '';
                                 charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
                                 postButton.disabled = true;
