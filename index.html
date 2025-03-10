@@ -1669,6 +1669,7 @@ function getShareableImageUrl(proposal) {
   // Make sure we have valid text to work with
   const text = proposal.text || "Unknown petition";
   const authorName = proposal.author_name || "Anonymous";
+  const encodedupVotes = proposal.upvotes || "fk all";
   
   // Encode the proposal text for URL - handle special characters better
   // Limit text length to avoid excessively long URLs
@@ -1690,10 +1691,17 @@ function getShareableImageUrl(proposal) {
   // Transformation parameters for text overlay - adjust for better readability
   const textParams = 
     `l_text:Roboto_30_bold:${encodedText}` + 
-    `,co_white,w_480,c_fit,g_north,y_60,x_50` +
-    `/l_text:Roboto_18:Posted%20by%20${encodedAuthor}` + 
-    `,co_rgb:aaaaaa,g_north_west,y_150,x_50`;
-  
+    `,co_rgb:EAEAEA,w_600,c_fit,g_north,y_100,x_50` +
+    `/l_text:Roboto_22_bold:${encodedAuthor}` + 
+    `,co_rgb:FF00FF,g_north_west,y_30,x_50` +
+    `/l_text:Roboto_18:✔ ${encodedSignatures} verified signatures` + 
+    `,co_rgb:00FF00,g_north_west,y_180,x_50` +
+    `/l_text:Roboto_18:${encodedupVotes} votes` + 
+    `,co_rgb:EAEAEA,g_north_west,y_220,x_50` +
+    `/l_text:Roboto_16:${encodedTimestamp}` + 
+    `,co_rgb:AAAAAA,g_north_west,y_250,x_50` +
+    `/b_black,w_800,h_400,c_fill`;
+
   // URL of your template image in R2
   const templateUrl = encodeURIComponent("https://radical.omar-c29.workers.dev/memes/petition-template.png");
   
