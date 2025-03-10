@@ -93,22 +93,39 @@
         </div>
 
         <script>
-function onlyCopyLink(proposalId) {
+// Function to detect mobile devices
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Function that handles both mobile and desktop sharing
+function smartCopyShare(proposalId, proposalText) {
   // Get the link to share
   const link = getShareableLink(proposalId);
   
-  // Copy to clipboard
-  navigator.clipboard.writeText(link)
-    .then(() => {
-      // Success message
-      showToastMessage('Link copied to clipboard!', '#11cc77');
-      console.log('Link copied:', link);
-    })
-    .catch(err => {
-      // Error message
-      console.error('Failed to copy link:', err);
-      showToastMessage('Failed to copy link', '#ff0099');
+  // Check if we're on a mobile device
+  if (isMobileDevice() && 'share' in navigator) {
+    // On mobile, use Web Share API
+    console.log("Mobile device detected - using Web Share API");
+    
+    // Decode the text if it exists
+    const text = proposalText ? decodeURIComponent(proposalText) : '';
+    
+    // Use Web Share API
+    navigator.share({
+      title: 'What do you think?',
+      text: text,
+      url: link
+    }).catch(err => {
+      console.log('Share failed:', err);
+      // Fall back to clipboard
+      copyToClipboard(link);
     });
+  } else {
+    // On desktop/Windows, just copy to clipboard
+    console.log("Desktop device detected - copying to clipboard");
+    copyToClipboard(link);
+  }
 }
         // Configuration
         const API_BASE_URL = 'https://radical.omar-c29.workers.dev/api'; // Replace with your actual worker URL
@@ -725,8 +742,8 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
         <span>${proposal.downvotes || 0}</span>
       </button>
 <span class="net-votes ${voteClass}">${netVotes > 0 ? '+' : ''}${netVotes}</span>
-<div class="custom-copy-button" data-id="${proposal.id}" style="display: inline-block; background-color: #000000; border: 0px solid #333333; color: #aaaaaa; padding: 4px 8px; font-size: 20px; position: relative; z-index: 10; cursor: pointer; vertical-align: middle;" onclick="event.stopPropagation(); event.preventDefault(); onlyCopyLink('${proposal.id}');">
-  <img src="https://radical.omar-c29.workers.dev/memes/share-arrow-icon-md.png" alt="Copy Link" style="width: 20px; height: 14px; filter: brightness(0) invert(1); pointer-events: none;">
+<div class="custom-copy-button" data-id="${proposal.id}" style="display: inline-block; background-color: #000000; border: 0px solid #333333; color: #aaaaaa; padding: 4px 8px; font-size: 20px; position: relative; z-index: 10; cursor: pointer; vertical-align: middle;" onclick="event.stopPropagation(); event.preventDefault(); smartCopyShare('${proposal.id}', '${encodeURIComponent(proposal.text)}');">
+  <img src="https://radical.omar-c29.workers.dev/memes/share-arrow-icon-md.png" alt="Share" style="width: 20px; height: 14px; filter: brightness(0) invert(1); pointer-events: none;">
 </div>
     </div>
     <div class="proposal-time">${formatDate(proposal.timestamp)}</div>
