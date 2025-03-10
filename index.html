@@ -4,8 +4,8 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>RADICAL - Australia's Democratic Revolution</title>
-        <meta property="og:image" content="${getShareableImageUrl(proposal)}">
-        <meta property="twitter:image" content="${getShareableImageUrl(proposal)}">
+        <meta property="og:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG" id="og-image">
+        <meta property="twitter:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG" id="twitter-image">
         <link rel="icon" href="https://radical.omar-c29.workers.dev/memes/favicon.jpg" type="image/png">
         <!-- Primary Meta Tags -->
         <meta property="og:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG">
@@ -1386,6 +1386,11 @@ function copyToClipboard(text) {
 
 // Create a modal to display when a proposal is opened via direct link
 function createProposalViewModal(proposal) {
+    // Update meta tags for sharing
+    const ogImageUrl = getShareableImageUrl(proposal);
+  document.getElementById('og-image').setAttribute('content', ogImageUrl);
+  document.getElementById('twitter-image').setAttribute('content', ogImageUrl);
+  
   // Create modal elements
   const modalOverlay = document.createElement('div');
   modalOverlay.className = 'modal-overlay';
@@ -1659,7 +1664,7 @@ function renderModalComments(container, comments) {
 
 function getShareableImageUrl(proposal) {
   // Base Cloudinary URL (you would need to sign up for Cloudinary)
-  const cloudinaryUrl = "https://res.cloudinary.com/your-cloud-name/image/fetch";
+  const cloudinaryUrl = "https://res.cloudinary.com/dh8apmjya/image/fetch";
   
   // Encode the proposal text for URL
   const encodedText = encodeURIComponent(proposal.text);
