@@ -1488,14 +1488,14 @@ function createProposalViewModal(proposal) {
     </div>
     `;
   modalBody.innerHTML += `
-    <div class="comments-section" style="margin-top: 30px;">
+  <div class="comments-section" style="margin-top: 30px;">
       <h4 style="margin-bottom: 15px; color: var(--primary);">Comments</h4>
-      <div class="comments-container show" data-proposal-id="${proposal.id}">
-        <form class="comment-form">
-          <textarea class="comment-input" placeholder="Add a comment..."></textarea>
-          <button type="submit" class="comment-submit" disabled>Post</button>
-        </form>
-        <div class="comments-content">
+      <div class="comments-container show" id="modal-comments-container-${proposal.id}" data-proposal-id="${proposal.id}">
+        <div class="comment-form" id="modal-comment-form-${proposal.id}">
+          <textarea class="comment-input" id="modal-comment-input-${proposal.id}" placeholder="Add a comment..."></textarea>
+          <button type="submit" class="comment-submit" id="modal-comment-submit-${proposal.id}" disabled>Post</button>
+        </div>
+        <div class="comments-content" id="modal-comments-content-${proposal.id}">
           <div class="comments-loading">Loading comments...</div>
         </div>
       </div>
@@ -1577,23 +1577,84 @@ function createProposalViewModal(proposal) {
   }
 
   // Handle comment form in modal
-  const modalCommentForm = modalBody.querySelector('.comment-form');
-  const modalCommentInput = modalBody.querySelector('.comment-input');
-  const modalCommentSubmit = modalBody.querySelector('.comment-submit');
+  const modalCommentInput = document.getElementById(`modal-comment-input-${proposal.id}`);
+  const modalCommentSubmit = document.getElementById(`modal-comment-submit-${proposal.id}`);
   
-  if (modalCommentForm && modalCommentInput && modalCommentSubmit) {
+  if (modalCommentInput && modalCommentSubmit) {
+    // Enable/disable submit button based on input content
     modalCommentInput.addEventListener('input', () => {
-      checkCommentInput(modalCommentInput, modalCommentSubmit);
+      modalCommentSubmit.disabled = modalCommentInput.value.trim().length === 0;
     });
     
-    modalCommentForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      submitComment(proposal.id, modalCommentForm);
+    // Handle form submission
+    modalCommentSubmit.addEventListener('click', () => {
+      const commentText = modalCommentInput.value.trim();
+      if (commentText) {
+        submitComment(proposal.id, commentText);
+        modalCommentInput.value = '';
+        modalCommentSubmit.disabled = true;
+      }
     });
-    
-    // Load comments for the modal
-    loadComments(proposal.id);
   }
+  
+  // Load comments for the modal
+  loadModalComments(proposal.id);
+}
+
+// New function specifically for loading comments in the modal
+function loadModalComments(proposalId) {
+  const commentsContent = document.getElementById(`modal-comments-content-${proposalId}`);
+  if (!commentsContent) return;
+  
+  // Show loading state
+  commentsContent.innerHTML = `<div class="comments-loading">Loading comments...</div>`;
+  
+  fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to fetch comments');
+      }
+      return response.json();
+    })
+    .then(comments => {
+      renderModalComments(commentsContent, comments);
+    })
+    .catch(error => {
+      console.error('Error fetching comments:', error);
+      commentsContent.innerHTML = `
+        <div class="no-comments">
+          Failed to load comments. Please try again.
+        </div>
+      `;
+    });
+}
+
+// New function to render comments in the modal
+function renderModalComments(container, comments) {
+  if (!comments || comments.length === 0) {
+    container.innerHTML = `
+      <div class="no-comments">
+        No comments yet. Be the first to comment!
+      </div>
+    `;
+    return;
+  }
+  
+  let commentsHtml = '';
+  
+  comments.forEach(comment => {
+    commentsHtml += `
+      <div class="comment-item">
+        <div class="comment-header">
+          <div class="comment-author">${comment.user_name}</div>
+          <div class="comment-time">${formatDate(comment.timestamp)}</div>
+        </div>
+        <div class="comment-text">${formatCommentText(comment.comment_text)}</div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = commentsHtml;
 }
 
 function getShareableImageUrl(proposal) {
