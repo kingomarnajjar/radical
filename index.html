@@ -7,25 +7,25 @@
         <meta property="og:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG" id="og-image">
         <meta property="twitter:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG" id="twitter-image">
         <link rel="icon" href="https://radical.omar-c29.workers.dev/memes/favicon.jpg" type="image/png">
-        <!-- Primary Meta Tags -->
+        <!-- Primary Meta Tags
         <meta property="og:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG">
 <meta name="title" content="RADICAL - The Underground Parliament">
 <meta name="description" content="Post dank policy memes, build movements, hack the system. Seize democracy from the elites.">
-<meta name="theme-color" content="#ff0099">
+<meta name="theme-color" content="#ff0099"> -->
 
 <!-- Open Graph / Facebook -->
-<meta property="og:type" content="website">
+<!-- <meta property="og:type" content="website">
 <meta property="og:url" content="https://theradicalparty.com/">
 <meta property="og:title" content="RADICAL - The Underground Parliament">
 <meta property="og:description" content="Post dank policy memes, build movements, hack the system. Take back control.">
-<meta property="og:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG">
+<meta property="og:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG"> -->
 
 <!-- Twitter -->
-<meta property="twitter:card" content="summary_large_image">
+<!-- <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:url" content="https://theradicalparty.com/">
 <meta property="twitter:title" content="RADICAL - Democratic Revolution">
 <meta property="twitter:description" content="The underground parliament where we hack the system.">
-<meta property="twitter:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG">
+<meta property="twitter:image" content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG"> -->
 
 <!-- App-like behavior for mobile -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1663,25 +1663,45 @@ function renderModalComments(container, comments) {
 }
 
 function getShareableImageUrl(proposal) {
-  // Base Cloudinary URL (you would need to sign up for Cloudinary)
+  // Base Cloudinary URL
   const cloudinaryUrl = "https://res.cloudinary.com/dh8apmjya/image/fetch";
   
-  // Encode the proposal text for URL
-  const encodedText = encodeURIComponent(proposal.text);
-  const encodedAuthor = encodeURIComponent(proposal.author_name);
+  // Make sure we have valid text to work with
+  const text = proposal.text || "Unknown petition";
+  const authorName = proposal.author_name || "Anonymous";
   
-  // Transformation parameters for text overlay
+  // Encode the proposal text for URL - handle special characters better
+  // Limit text length to avoid excessively long URLs
+  const maxTextLength = 100;
+  const trimmedText = text.length > maxTextLength ? 
+    text.substring(0, maxTextLength) + '...' : text;
+  
+  const encodedText = encodeURIComponent(trimmedText)
+    .replace(/'/g, '%27')
+    .replace(/"/g, '%22')
+    .replace(/\(/g, '%28')
+    .replace(/\)/g, '%29')
+    .replace(/\*/g, '%2A');
+  
+  const encodedAuthor = encodeURIComponent(authorName)
+    .replace(/'/g, '%27')
+    .replace(/"/g, '%22');
+  
+  // Transformation parameters for text overlay - adjust for better readability
   const textParams = 
-    "l_text:Roboto_32_bold:" + encodedText + 
-    ",co_white,w_500,c_fit/" +
-    "l_text:Roboto_20:Posted%20by%20" + encodedAuthor + 
-    ",co_rgb:aaaaaa,g_north_west,y_80,x_50";
+    `l_text:Roboto_30_bold:${encodedText}` + 
+    `,co_white,w_480,c_fit,g_north,y_60,x_50` +
+    `/l_text:Roboto_18:Posted%20by%20${encodedAuthor}` + 
+    `,co_rgb:aaaaaa,g_north_west,y_150,x_50`;
   
   // URL of your template image in R2
   const templateUrl = encodeURIComponent("https://radical.omar-c29.workers.dev/memes/petition-template.png");
   
+  // Add a cache-busting parameter to prevent caching issues
+  const cacheBuster = Date.now();
+  
   // Combine everything
-  return `${cloudinaryUrl}/${textParams}/${templateUrl}`;
+  return `${cloudinaryUrl}/${textParams}/${templateUrl}?cb=${cacheBuster}`;
 }
 
 // Function to toggle comments visibility
