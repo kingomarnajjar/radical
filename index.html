@@ -756,8 +756,7 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
       <div class="comments-list" id="comments-list-${proposal.id}"></div>
       <div class="comment-form">
         <textarea class="comment-input" id="comment-input-${proposal.id}" placeholder="Add your comment..." onclick="event.stopPropagation(); event.preventDefault();"></textarea>
-        <button class="comment-submit" data-proposal-id="${proposal.id}" onclick="event.stopPropagation(); event.preventDefault();">Defy</button>
-      </div>
+<button class="comment-submit" data-proposal-id="${proposal.id}" onclick="event.stopPropagation(); event.preventDefault();">${getRandomCTA()}</button>      </div>
     </div>
   </div>
 `;
@@ -1584,7 +1583,10 @@ function createProposalViewModal(proposal) {
   // Handle comment form in modal
   const modalCommentInput = document.getElementById(`modal-comment-input-${proposal.id}`);
   const modalCommentSubmit = document.getElementById(`modal-comment-submit-${proposal.id}`);
-  
+  if (modalCommentSubmit) {
+    modalCommentSubmit.textContent = getRandomCTA();
+  }
+
   if (modalCommentInput && modalCommentSubmit) {
     // Enable/disable submit button based on input content
     modalCommentInput.addEventListener('input', () => {
@@ -1985,51 +1987,102 @@ function checkCommentInput(input, submitButton) {
 }
 
 // Addition to renderProposals function - Add comments section to each proposal card
+// Array of cool CTAs that fit the radical theme
+const commentCTAs = [
+  "Defy",
+  "Disrupt",
+  "Rebel",
+  "Agitate",
+  "Incite",
+  "Revolt",
+  "Dissent",
+  "Subvert",
+  "Condemn",
+  "Provoke",
+  "Expose",
+  "Overthrow",
+  "Resist",
+  "Sabotage",
+  "Infiltrate",
+  "Mobilize",
+  "Instigate",
+  "Counterstrike",
+  "Deconstruct",
+  "Destabilize",
+  "Undermine",
+  "Detonate", 
+  "Defame",
+  "Shoot down"
+];
+
+// Function to get a random CTA from the array
+function getRandomCTA() {
+  const randomIndex = Math.floor(Math.random() * commentCTAs.length);
+  return commentCTAs[randomIndex];
+}
+
+// Function to cycle through CTAs for all comment buttons
+function startCTACycling() {
+  // Find all comment submit buttons
+  const commentSubmitButtons = document.querySelectorAll('.comment-submit');
+  
+  // Set initial random CTAs
+  commentSubmitButtons.forEach(button => {
+    button.textContent = getRandomCTA();
+  });
+  
+  // Change CTAs periodically
+  setInterval(() => {
+    commentSubmitButtons.forEach(button => {
+      // Only change CTA if button is not disabled (to avoid changing while submitting)
+      if (!button.disabled) {
+        button.textContent = getRandomCTA();
+      }
+    });
+  }, 30000); // Change every 30 seconds
+}
+
+// Modified addCommentsToProposal function to use random CTAs
 function addCommentsToProposal(proposalCard, proposalId) {
+  // Check if comments section already exists to avoid duplicates
+  const existingComments = proposalCard.querySelector('.comments-section');
+  if (existingComments) return; // If comments section already exists, don't add another one
+  
   const commentsSection = document.createElement('div');
   commentsSection.className = 'comments-section';
   
   const commentsToggle = document.createElement('button');
   commentsToggle.className = 'comments-toggle';
-  commentsToggle.setAttribute('aria-expanded', 'false');
+  commentsToggle.id = `comments-toggle-${proposalId}`;
+  commentsToggle.innerHTML = `<span class="comments-toggle-icon">▶</span> 0 comments`;
   
   const commentsContainer = document.createElement('div');
   commentsContainer.className = 'comments-container';
-  commentsContainer.setAttribute('data-proposal-id', proposalId);
+  commentsContainer.id = `comments-container-${proposalId}`;
+  commentsContainer.style.display = 'none';
   
-  const commentsForm = document.createElement('form');
-  commentsForm.className = 'comment-form';
-  commentsForm.onsubmit = (e) => {
-    e.preventDefault();
-    submitComment(proposalId, commentsForm);
-  };
+  const commentsList = document.createElement('div');
+  commentsList.className = 'comments-list';
+  commentsList.id = `comments-list-${proposalId}`;
+  
+  const commentForm = document.createElement('div');
+  commentForm.className = 'comment-form';
   
   const commentInput = document.createElement('textarea');
   commentInput.className = 'comment-input';
-  commentInput.placeholder = 'Add a comment...';
-  commentInput.rows = 1;
-  commentInput.oninput = () => checkCommentInput(commentInput, commentSubmit);
-  
-  // Auto-resize textarea as user types
-  commentInput.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = (this.scrollHeight) + 'px';
-  });
+  commentInput.id = `comment-input-${proposalId}`;
+  commentInput.placeholder = 'Add your comment...';
   
   const commentSubmit = document.createElement('button');
   commentSubmit.className = 'comment-submit';
-  commentSubmit.type = 'submit';
-  commentSubmit.textContent = 'Defy';
-  commentSubmit.disabled = true;
+  commentSubmit.dataset.proposalId = proposalId;
+  commentSubmit.textContent = getRandomCTA(); // Use random CTA instead of "Submit"
   
-  commentsForm.appendChild(commentInput);
-  commentsForm.appendChild(commentSubmit);
+  commentForm.appendChild(commentInput);
+  commentForm.appendChild(commentSubmit);
   
-  const commentsContent = document.createElement('div');
-  commentsContent.className = 'comments-content';
-  
-  commentsContainer.appendChild(commentsForm);
-  commentsContainer.appendChild(commentsContent);
+  commentsContainer.appendChild(commentsList);
+  commentsContainer.appendChild(commentForm);
   
   commentsSection.appendChild(commentsToggle);
   commentsSection.appendChild(commentsContainer);
@@ -2037,8 +2090,45 @@ function addCommentsToProposal(proposalCard, proposalId) {
   proposalCard.appendChild(commentsSection);
   
   // Add event listener to toggle button
-  commentsToggle.addEventListener('click', () => {
-    toggleComments(proposalId, commentsToggle);
+  commentsToggle.addEventListener('click', function(e) {
+    e.stopPropagation(); // Prevent bubbling up to parent elements
+    
+    const isVisible = commentsContainer.style.display !== 'none';
+    
+    if (isVisible) {
+      commentsContainer.style.display = 'none';
+      this.querySelector('.comments-toggle-icon').textContent = '▶';
+    } else {
+      commentsContainer.style.display = 'block';
+      this.querySelector('.comments-toggle-icon').textContent = '▼';
+      loadComments(proposalId);
+    }
+  });
+  
+  // Add event listener for comment submission
+  commentSubmit.addEventListener('click', function(e) {
+    e.stopPropagation(); // Prevent bubbling up to parent elements
+    
+    const commentInput = document.getElementById(`comment-input-${proposalId}`);
+    const commentText = commentInput?.value.trim();
+    
+    if (commentText) {
+      // Temporarily change text to show submission is in progress
+      const originalText = this.textContent;
+      this.textContent = "Sending...";
+      this.disabled = true;
+      
+      submitComment(proposalId, commentText).then(() => {
+        commentInput.value = '';
+        // Set a new random CTA after submission
+        this.textContent = getRandomCTA();
+        this.disabled = false;
+      }).catch(() => {
+        // Restore original CTA if there was an error
+        this.textContent = originalText;
+        this.disabled = false;
+      });
+    }
   });
 }
  // Music player functionality
@@ -2139,6 +2229,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+  // Run after a short delay to ensure all buttons are rendered
+  setTimeout(startCTACycling, 1000);
+});
+
+
     // Add these functions outside your renderProposals function
 
 function updateCommentCount(proposalId) {
@@ -2190,8 +2286,9 @@ function loadComments(proposalId) {
     });
 }
 
+// Update submitComment function to handle promises
 function submitComment(proposalId, commentText) {
-  fetch(`${API_BASE_URL}/comments`, {
+  return fetch(`${API_BASE_URL}/comments`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -2202,15 +2299,23 @@ function submitComment(proposalId, commentText) {
       commentText: commentText
     })
   })
-    .then(response => response.json())
-    .then(data => {
-      loadComments(proposalId);
-      updateCommentCount(proposalId);
-      showToastMessage('Comment posted!', '#11cc77');
-    })
-    .catch(error => {
-      showToastMessage('Failed to post comment', '#ff0099');
-    });
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Failed to post comment');
+    }
+    return response.json();
+  })
+  .then(data => {
+    loadComments(proposalId);
+    updateCommentCount(proposalId);
+    showToastMessage('Comment posted!', '#11cc77');
+    return data;
+  })
+  .catch(error => {
+    console.error('Error posting comment:', error);
+    showToastMessage('Failed to post comment', '#ff0099');
+    throw error;
+  });
 }
 
         </script>
