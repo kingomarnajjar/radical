@@ -756,7 +756,7 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
       <div class="comments-list" id="comments-list-${proposal.id}"></div>
       <div class="comment-form">
         <textarea class="comment-input" id="comment-input-${proposal.id}" placeholder="Add your comment..." onclick="event.stopPropagation(); event.preventDefault();"></textarea>
-        <button class="comment-submit" data-proposal-id="${proposal.id}" onclick="event.stopPropagation(); event.preventDefault();">Submit</button>
+        <button class="comment-submit" data-proposal-id="${proposal.id}" onclick="event.stopPropagation(); event.preventDefault();">Defy</button>
       </div>
     </div>
   </div>
@@ -1498,7 +1498,7 @@ function createProposalViewModal(proposal) {
       <div class="comments-container show" id="modal-comments-container-${proposal.id}" data-proposal-id="${proposal.id}">
         <div class="comment-form" id="modal-comment-form-${proposal.id}">
           <textarea class="comment-input" id="modal-comment-input-${proposal.id}" placeholder="Add a comment..."></textarea>
-          <button type="submit" class="comment-submit" id="modal-comment-submit-${proposal.id}" disabled>Post</button>
+          <button type="submit" class="comment-submit" id="modal-comment-submit-${proposal.id}" disabled>Defy</button>
         </div>
         <div class="comments-content" id="modal-comments-content-${proposal.id}">
           <div class="comments-loading">Loading comments...</div>
