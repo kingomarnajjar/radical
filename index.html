@@ -1674,77 +1674,63 @@ function renderModalComments(container, comments) {
   container.innerHTML = commentsHtml;
 }
 
-// Add function to handle comment votes
+// 4. Add function to handle comment votes
 async function handleCommentVote(commentId, voteType) {
   if (!commentId || !voteType) return;
   
-  // Find all instances of this comment vote buttons (may be in modal and in main feed)
-  const upvoteButtons = document.querySelectorAll(`.comment-vote-button[data-comment-id="${commentId}"][data-vote-type="upvote"]`);
-  const downvoteButtons = document.querySelectorAll(`.comment-vote-button[data-comment-id="${commentId}"][data-vote-type="downvote"]`);
+  // Find all instances of this comment (may be in modal and in main feed)
+  const commentItems = document.querySelectorAll(`.comment-item[data-comment-id="${commentId}"]`);
+  if (commentItems.length === 0) return;
   
-  if (upvoteButtons.length === 0 || downvoteButtons.length === 0) return;
-  
-  // Track the state for all instances
-  let wasUpvoted = false;
-  let wasDownvoted = false;
-  let upvotes = 0;
-  let downvotes = 0;
-  
-  // Get current state from the first button set
-  wasUpvoted = upvoteButtons[0].classList.contains('upvoted');
-  wasDownvoted = downvoteButtons[0].classList.contains('downvoted');
-  upvotes = parseInt(upvoteButtons[0].querySelector('.comment-vote-count').textContent);
-  downvotes = parseInt(downvoteButtons[0].querySelector('.comment-vote-count').textContent);
-
-  // Calculate new states
-  let newUpvotes = upvotes;
-  let newDownvotes = downvotes;
-  let newUpvotedClass = wasUpvoted;
-  let newDownvotedClass = wasDownvoted;
-  
-  if (voteType === 'upvote') {
-    if (wasUpvoted) {
-      // Toggle off upvote
-      newUpvotedClass = false;
-      newUpvotes = upvotes - 1;
-    } else {
-      // Add upvote
-      newUpvotedClass = true;
-      newUpvotes = upvotes + 1;
-      
-      // If was downvoted, remove downvote
-      if (wasDownvoted) {
-        newDownvotedClass = false;
-        newDownvotes = downvotes - 1;
-      }
-    }
-  } else if (voteType === 'downvote') {
-    if (wasDownvoted) {
-      // Toggle off downvote
-      newDownvotedClass = false;
-      newDownvotes = downvotes - 1;
-    } else {
-      // Add downvote
-      newDownvotedClass = true;
-      newDownvotes = downvotes + 1;
-      
-      // If was upvoted, remove upvote
+  // Get the buttons and counts for all instances
+  commentItems.forEach(commentItem => {
+    const upvoteButton = commentItem.querySelector(`.comment-vote-button[data-vote-type="upvote"]`);
+    const downvoteButton = commentItem.querySelector(`.comment-vote-button[data-vote-type="downvote"]`);
+    const upvoteCount = upvoteButton.querySelector('.comment-vote-count');
+    const downvoteCount = downvoteButton.querySelector('.comment-vote-count');
+    
+    // Get current state
+    const wasUpvoted = upvoteButton.classList.contains('upvoted');
+    const wasDownvoted = downvoteButton.classList.contains('downvoted');
+    
+    // Get current counts
+    let upvotes = parseInt(upvoteCount.textContent);
+    let downvotes = parseInt(downvoteCount.textContent);
+    
+    // Update UI optimistically
+    if (voteType === 'upvote') {
       if (wasUpvoted) {
-        newUpvotedClass = false;
-        newUpvotes = upvotes - 1;
+        // Toggle off upvote
+        upvoteButton.classList.remove('upvoted');
+        upvoteCount.textContent = upvotes - 1;
+      } else {
+        // Add upvote
+        upvoteButton.classList.add('upvoted');
+        upvoteCount.textContent = upvotes + 1;
+        
+        // If was downvoted, remove downvote
+        if (wasDownvoted) {
+          downvoteButton.classList.remove('downvoted');
+          downvoteCount.textContent = downvotes - 1;
+        }
+      }
+    } else if (voteType === 'downvote') {
+      if (wasDownvoted) {
+        // Toggle off downvote
+        downvoteButton.classList.remove('downvoted');
+        downvoteCount.textContent = downvotes - 1;
+      } else {
+        // Add downvote
+        downvoteButton.classList.add('downvoted');
+        downvoteCount.textContent = downvotes + 1;
+        
+        // If was upvoted, remove upvote
+        if (wasUpvoted) {
+          upvoteButton.classList.remove('upvoted');
+          upvoteCount.textContent = upvotes - 1;
+        }
       }
     }
-  }
-  
-  // Update all instances
-  upvoteButtons.forEach(button => {
-    button.classList.toggle('upvoted', newUpvotedClass);
-    button.querySelector('.comment-vote-count').textContent = newUpvotes;
-  });
-  
-  downvoteButtons.forEach(button => {
-    button.classList.toggle('downvoted', newDownvotedClass);
-    button.querySelector('.comment-vote-count').textContent = newDownvotes;
   });
   
   // Submit vote to server
@@ -1765,24 +1751,20 @@ async function handleCommentVote(commentId, voteType) {
       throw new Error('Failed to submit comment vote');
     }
     
-    // Server response successful
+    const result = await response.json();
+    
+    // If the server response indicates we should update the UI differently, we could handle that here
+    // But generally the optimistic UI update above should match the server result
+    
   } catch (error) {
     console.error('Error voting on comment:', error);
-    showToastMessage('Your vote didn\'t count. Please try again.', '#ff0099');
+    showToastMessage('Hmm, your comment vote didn\'t count. Please try again.', '#ff0099');
     
-    // Revert UI changes
-    upvoteButtons.forEach(button => {
-      button.classList.toggle('upvoted', wasUpvoted);
-      button.querySelector('.comment-vote-count').textContent = upvotes;
-    });
-    
-    downvoteButtons.forEach(button => {
-      button.classList.toggle('downvoted', wasDownvoted);
-      button.querySelector('.comment-vote-count').textContent = downvotes;
-    });
+    // Revert UI changes by reloading the comments
+    // This is a simple approach; you could be more sophisticated by reverting just the affected elements
+    await loadComments(currentProposalId);
   }
 }
-
 
 function getShareableImageUrl(proposal) {
   // Base Cloudinary URL
@@ -1844,66 +1826,31 @@ function toggleComments(proposalId, button) {
 }
 
 // Function to load comments for a proposal
-function loadComments(proposalId) {
-  const commentsList = document.getElementById(`comments-list-${proposalId}`);
-  if (!commentsList) return;
+async function loadComments(proposalId) {
+  const commentsContainer = document.querySelector(`.comments-container[data-proposal-id="${proposalId}"]`);
+  const commentsContent = commentsContainer.querySelector('.comments-content');
   
-  commentsList.innerHTML = '<div class="comments-loading">Loading comments...</div>';
+  // Show loading state
+  commentsContent.innerHTML = `<div class="comments-loading">Loading comments...</div>`;
   
-  fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`)
-    .then(response => response.json())
-    .then(comments => {
-      if (comments.length === 0) {
-        commentsList.innerHTML = '<div class="no-comments">No comments yet. Be the first to comment!</div>';
-        return;
-      }
-      
-      commentsList.innerHTML = '';
-      comments.forEach(comment => {
-        const upvotedClass = comment.userVote === 'upvote' ? 'upvoted' : '';
-        const downvotedClass = comment.userVote === 'downvote' ? 'downvoted' : '';
-        
-        const commentElement = document.createElement('div');
-        commentElement.className = 'comment';
-        commentElement.innerHTML = `
-          <div class="comment-header">
-            <span class="comment-author">${comment.user_name}</span>
-            <span class="comment-time">${formatDate(comment.timestamp)}</span>
-          </div>
-          <div class="comment-body">${comment.comment_text}</div>
-          <div class="comment-vote-buttons">
-            <button class="comment-vote-button ${upvotedClass}" data-comment-id="${comment.id}" data-vote-type="upvote">
-              <span class="comment-vote-icon">▲</span>
-              <span class="comment-vote-count">${comment.upvotes || 0}</span>
-            </button>
-            <button class="comment-vote-button ${downvotedClass}" data-comment-id="${comment.id}" data-vote-type="downvote">
-              <span class="comment-vote-icon">▼</span>
-              <span class="comment-vote-count">${comment.downvotes || 0}</span>
-            </button>
-          </div>
-        `;
-        
-        // Add event listeners for the vote buttons
-        const upvoteButton = commentElement.querySelector(`.comment-vote-button[data-vote-type="upvote"]`);
-        const downvoteButton = commentElement.querySelector(`.comment-vote-button[data-vote-type="downvote"]`);
-        
-        upvoteButton.addEventListener('click', function(e) {
-          e.stopPropagation(); // Prevent triggering parent elements
-          handleCommentVote(comment.id, 'upvote');
-        });
-        
-        downvoteButton.addEventListener('click', function(e) {
-          e.stopPropagation(); // Prevent triggering parent elements
-          handleCommentVote(comment.id, 'downvote');
-        });
-        
-        commentsList.appendChild(commentElement);
-      });
-    })
-    .catch(error => {
-      commentsList.innerHTML = '<div class="comments-error">Failed to load comments.</div>';
-      console.error('Error loading comments:', error);
-    });
+  try {
+    // Include the current user ID to get their votes
+    const response = await fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch comments');
+    }
+    
+    const comments = await response.json();
+    renderComments(commentsContent, comments);
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    commentsContent.innerHTML = `
+      <div class="no-comments">
+        Failed to load comments. Please try again.
+      </div>
+    `;
+  }
 }
 
 // Function to render comments
@@ -1965,34 +1912,70 @@ function formatCommentText(text) {
 }
 
 // Function to submit a new comment
-function submitComment(proposalId, commentText) {
-  fetch(`${API_BASE_URL}/comments`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      proposalId: proposalId,
-      userId: currentUser.id,
-      commentText: commentText
-    })
-  })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Failed to post comment');
-      }
-      return response.json();
-    })
-    .then(data => {
-      // Reload comments to show the new one with votes
-      loadComments(proposalId);
-      updateCommentCount(proposalId);
-      showToastMessage('Comment posted!', '#11cc77');
-    })
-    .catch(error => {
-      console.error('Error posting comment:', error);
-      showToastMessage('Failed to post comment', '#ff0099');
+async function submitComment(proposalId, form) {
+  const commentInput = form.querySelector('.comment-input');
+  const submitButton = form.querySelector('.comment-submit');
+  
+  const commentText = commentInput.value.trim();
+  
+  if (!commentText) return;
+  
+  // Disable form while submitting
+  commentInput.disabled = true;
+  submitButton.disabled = true;
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/comments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        proposalId: proposalId,
+        userId: currentUser.id,
+        commentText: commentText
+      })
     });
+    
+    if (!response.ok) {
+      throw new Error('Failed to submit comment');
+    }
+    
+    // Clear input
+    commentInput.value = '';
+    
+    // Reload comments to show the new one
+    const commentsContainer = document.querySelector(`.comments-container[data-proposal-id="${proposalId}"]`);
+    const commentsContent = commentsContainer.querySelector('.comments-content');
+    
+    // Add new comment to the top (optimistic update)
+    const newComment = await response.json();
+    const tempCommentHtml = `
+      <div class="comment-item" style="animation: fadeIn 0.5s;">
+        <div class="comment-header">
+          <div class="comment-author">${newComment.userName}</div>
+          <div class="comment-time">just now</div>
+        </div>
+        <div class="comment-text">${formatCommentText(newComment.commentText)}</div>
+      </div>
+    `;
+    
+    // If there are no comments yet, replace the "no comments" message
+    if (commentsContent.querySelector('.no-comments')) {
+      commentsContent.innerHTML = tempCommentHtml;
+    } else {
+      // Otherwise, prepend to existing comments
+      commentsContent.insertAdjacentHTML('afterbegin', tempCommentHtml);
+    }
+    
+  } catch (error) {
+    console.error('Error posting comment:', error);
+    showToastMessage('Failed to post comment. Please try again.', '#ff0099');
+  } finally {
+    // Re-enable form
+    commentInput.disabled = false;
+    submitButton.disabled = false;
+  }
 }
 
 // Function to check if comment input is not empty
@@ -2001,7 +1984,6 @@ function checkCommentInput(input, submitButton) {
   submitButton.disabled = !hasContent;
 }
 
-
 // Addition to renderProposals function - Add comments section to each proposal card
 function addCommentsToProposal(proposalCard, proposalId) {
   const commentsSection = document.createElement('div');
@@ -2009,38 +1991,45 @@ function addCommentsToProposal(proposalCard, proposalId) {
   
   const commentsToggle = document.createElement('button');
   commentsToggle.className = 'comments-toggle';
-  commentsToggle.id = `comments-toggle-${proposalId}`;
   commentsToggle.setAttribute('aria-expanded', 'false');
-  commentsToggle.innerHTML = '<span class="comments-toggle-icon">▶</span> 0 comments';
   
   const commentsContainer = document.createElement('div');
   commentsContainer.className = 'comments-container';
-  commentsContainer.id = `comments-container-${proposalId}`;
-  commentsContainer.style.display = 'none';
   commentsContainer.setAttribute('data-proposal-id', proposalId);
   
-  const commentsList = document.createElement('div');
-  commentsList.className = 'comments-list';
-  commentsList.id = `comments-list-${proposalId}`;
-  
-  const commentsForm = document.createElement('div');
+  const commentsForm = document.createElement('form');
   commentsForm.className = 'comment-form';
+  commentsForm.onsubmit = (e) => {
+    e.preventDefault();
+    submitComment(proposalId, commentsForm);
+  };
   
   const commentInput = document.createElement('textarea');
   commentInput.className = 'comment-input';
-  commentInput.id = `comment-input-${proposalId}`;
-  commentInput.placeholder = 'Add your comment...';
+  commentInput.placeholder = 'Add a comment...';
+  commentInput.rows = 1;
+  commentInput.oninput = () => checkCommentInput(commentInput, commentSubmit);
+  
+  // Auto-resize textarea as user types
+  commentInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
+  });
   
   const commentSubmit = document.createElement('button');
   commentSubmit.className = 'comment-submit';
-  commentSubmit.setAttribute('data-proposal-id', proposalId);
-  commentSubmit.textContent = 'Submit';
+  commentSubmit.type = 'submit';
+  commentSubmit.textContent = 'Defy';
+  commentSubmit.disabled = true;
   
   commentsForm.appendChild(commentInput);
   commentsForm.appendChild(commentSubmit);
   
-  commentsContainer.appendChild(commentsList);
+  const commentsContent = document.createElement('div');
+  commentsContent.className = 'comments-content';
+  
   commentsContainer.appendChild(commentsForm);
+  commentsContainer.appendChild(commentsContent);
   
   commentsSection.appendChild(commentsToggle);
   commentsSection.appendChild(commentsContainer);
@@ -2048,30 +2037,10 @@ function addCommentsToProposal(proposalCard, proposalId) {
   proposalCard.appendChild(commentsSection);
   
   // Add event listener to toggle button
-  commentsToggle.addEventListener('click', function() {
-    const isVisible = commentsContainer.style.display !== 'none';
-    
-    if (isVisible) {
-      commentsContainer.style.display = 'none';
-      this.querySelector('.comments-toggle-icon').textContent = '▶';
-    } else {
-      commentsContainer.style.display = 'block';
-      this.querySelector('.comments-toggle-icon').textContent = '▼';
-      loadComments(proposalId); // This now includes proper vote UI
-    }
-  });
-  
-  // Add event listener for comment submission
-  commentSubmit.addEventListener('click', function() {
-    const commentText = commentInput.value.trim();
-    
-    if (commentText) {
-      submitComment(proposalId, commentText);
-      commentInput.value = '';
-    }
+  commentsToggle.addEventListener('click', () => {
+    toggleComments(proposalId, commentsToggle);
   });
 }
-
  // Music player functionality
 document.addEventListener('DOMContentLoaded', () => {
   // Set up variables

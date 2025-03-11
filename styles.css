@@ -1143,111 +1143,78 @@ a {
     color: unset;
 }
 
-/* Styles for comments in the main feed */
-.comments-list {
-    margin-top: 10px;
-  }
-  
-  .comments-list .comment {
-    padding: 10px;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-  }
-  
-  .comments-list .comment:last-child {
-    border-bottom: none;
-  }
-  
-  .comments-list .comment-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    margin-bottom: 4px;
-  }
-  
-  .comments-list .comment-author {
-    font-weight: bold;
-    color: var(--text);
-  }
-  
-  .comments-list .comment-time {
-    color: var(--text-light);
-  }
-  
-  .comments-list .comment-body {
-    margin-bottom: 6px;
-    line-height: 1.4;
-    word-break: break-word;
-    color: var(--text);
-  }
-  
-  .comments-list .comment-vote-buttons {
+/* Comment voting styles */
+.comment-vote-buttons {
     display: flex;
     align-items: center;
-    margin-top: 4px;
+    margin-top: 8px;
   }
   
-  .comments-list .comment-vote-button {
+  .comment-vote-button {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text-light);
-    padding: 2px 4px;
+    padding: 3px 6px;
     border-radius: 3px;
-    margin-right: 8px;
+    margin-right: 10px;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
   }
   
-  .comments-list .comment-vote-button:hover {
+  .comment-vote-button:hover {
     background-color: rgba(255, 255, 255, 0.05);
   }
   
-  .comments-list .comment-vote-button.upvoted {
+  .comment-vote-button.upvoted {
     color: var(--primary);
   }
   
-  .comments-list .comment-vote-button.downvoted {
+  .comment-vote-button.downvoted {
     color: var(--primary);
   }
   
-  .comments-list .comment-vote-icon {
-    font-size: 9px;
-    margin-right: 3px;
+  .comment-vote-icon {
+    font-size: 10px;
+    margin-right: 4px;
   }
   
-  .comments-list .comment-vote-count {
-    font-size: 11px;
-    min-width: 12px;
+  .comment-vote-count {
+    font-size: 12px;
+    min-width: 15px;
+    text-align: center;
   }
   
-  /* Make sure comments container has max-height and scrolling */
-  .comments-container {
-    max-height: 400px;
-    overflow-y: auto;
-    background-color: var(--background);
-    border-top: 1px solid var(--border);
+  /* Adjust existing comment styles to accommodate voting */
+  .comment-item {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    animation: fadeIn 0.3s ease;
   }
   
-  /* Ensure proposal card buttons don't conflict with comment vote buttons */
-  .proposal-card .vote-button {
-    z-index: 5;
+  .comment-text {
+    margin: 6px 0;
+    font-size: 14px;
+    line-height: 1.4;
+    word-break: break-word;
   }
   
-  /* Stop propagation for clicks inside comments */
-  .comments-container * {
-    pointer-events: auto;
+  .comment-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
   }
-
-  .comment-vote-button.upvoted .comment-vote-icon,
-.comment-vote-button.downvoted .comment-vote-icon {
-  animation: pulse 0.3s ease-in-out;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.5); }
-  100% { transform: scale(1); }
-}
+  
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .comment-vote-buttons {
+      margin-top: 6px;
+    }
+    
+    .comment-vote-button {
+      padding: 2px 4px;
+    }
+  }
