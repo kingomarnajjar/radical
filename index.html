@@ -1607,34 +1607,33 @@ function createProposalViewModal(proposal) {
 }
 
 // New function specifically for loading comments in the modal
-function loadModalComments(proposalId) {
+async function loadModalComments(proposalId) {
   const commentsContent = document.getElementById(`modal-comments-content-${proposalId}`);
   if (!commentsContent) return;
   
   // Show loading state
   commentsContent.innerHTML = `<div class="comments-loading">Loading comments...</div>`;
   
-  fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Failed to fetch comments');
-      }
-      return response.json();
-    })
-    .then(comments => {
-      renderModalComments(commentsContent, comments);
-    })
-    .catch(error => {
-      console.error('Error fetching comments:', error);
-      commentsContent.innerHTML = `
-        <div class="no-comments">
-          Failed to load comments. Please try again.
-        </div>
-      `;
-    });
+  try {
+    // Include the current user ID to get their votes
+    const response = await fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch comments');
+    }
+    
+    const comments = await response.json();
+    renderModalComments(commentsContent, comments);
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    commentsContent.innerHTML = `
+      <div class="no-comments">
+        Failed to load comments. Please try again.
+      </div>
+    `;
+  }
 }
 
-// New function to render comments in the modal
 function renderModalComments(container, comments) {
   if (!comments || comments.length === 0) {
     container.innerHTML = `
@@ -1648,18 +1647,123 @@ function renderModalComments(container, comments) {
   let commentsHtml = '';
   
   comments.forEach(comment => {
+    const upvotedClass = comment.userVote === 'upvote' ? 'upvoted' : '';
+    const downvotedClass = comment.userVote === 'downvote' ? 'downvoted' : '';
+    
     commentsHtml += `
-      <div class="comment-item">
+      <div class="comment-item" data-comment-id="${comment.id}">
         <div class="comment-header">
           <div class="comment-author">${comment.user_name}</div>
           <div class="comment-time">${formatDate(comment.timestamp)}</div>
         </div>
         <div class="comment-text">${formatCommentText(comment.comment_text)}</div>
+        <div class="comment-vote-buttons">
+          <button class="comment-vote-button ${upvotedClass}" data-comment-id="${comment.id}" data-vote-type="upvote" onclick="handleCommentVote('${comment.id}', 'upvote')">
+            <span class="comment-vote-icon">▲</span>
+            <span class="comment-vote-count">${comment.upvotes || 0}</span>
+          </button>
+          <button class="comment-vote-button ${downvotedClass}" data-comment-id="${comment.id}" data-vote-type="downvote" onclick="handleCommentVote('${comment.id}', 'downvote')">
+            <span class="comment-vote-icon">▼</span>
+            <span class="comment-vote-count">${comment.downvotes || 0}</span>
+          </button>
+        </div>
       </div>
     `;
   });
   
   container.innerHTML = commentsHtml;
+}
+
+// 4. Add function to handle comment votes
+async function handleCommentVote(commentId, voteType) {
+  if (!commentId || !voteType) return;
+  
+  // Find all instances of this comment (may be in modal and in main feed)
+  const commentItems = document.querySelectorAll(`.comment-item[data-comment-id="${commentId}"]`);
+  if (commentItems.length === 0) return;
+  
+  // Get the buttons and counts for all instances
+  commentItems.forEach(commentItem => {
+    const upvoteButton = commentItem.querySelector(`.comment-vote-button[data-vote-type="upvote"]`);
+    const downvoteButton = commentItem.querySelector(`.comment-vote-button[data-vote-type="downvote"]`);
+    const upvoteCount = upvoteButton.querySelector('.comment-vote-count');
+    const downvoteCount = downvoteButton.querySelector('.comment-vote-count');
+    
+    // Get current state
+    const wasUpvoted = upvoteButton.classList.contains('upvoted');
+    const wasDownvoted = downvoteButton.classList.contains('downvoted');
+    
+    // Get current counts
+    let upvotes = parseInt(upvoteCount.textContent);
+    let downvotes = parseInt(downvoteCount.textContent);
+    
+    // Update UI optimistically
+    if (voteType === 'upvote') {
+      if (wasUpvoted) {
+        // Toggle off upvote
+        upvoteButton.classList.remove('upvoted');
+        upvoteCount.textContent = upvotes - 1;
+      } else {
+        // Add upvote
+        upvoteButton.classList.add('upvoted');
+        upvoteCount.textContent = upvotes + 1;
+        
+        // If was downvoted, remove downvote
+        if (wasDownvoted) {
+          downvoteButton.classList.remove('downvoted');
+          downvoteCount.textContent = downvotes - 1;
+        }
+      }
+    } else if (voteType === 'downvote') {
+      if (wasDownvoted) {
+        // Toggle off downvote
+        downvoteButton.classList.remove('downvoted');
+        downvoteCount.textContent = downvotes - 1;
+      } else {
+        // Add downvote
+        downvoteButton.classList.add('downvoted');
+        downvoteCount.textContent = downvotes + 1;
+        
+        // If was upvoted, remove upvote
+        if (wasUpvoted) {
+          upvoteButton.classList.remove('upvoted');
+          upvoteCount.textContent = upvotes - 1;
+        }
+      }
+    }
+  });
+  
+  // Submit vote to server
+  try {
+    const response = await fetch(`${API_BASE_URL}/comment-votes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        commentId: commentId,
+        userId: currentUser.id,
+        voteType: voteType
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to submit comment vote');
+    }
+    
+    const result = await response.json();
+    
+    // If the server response indicates we should update the UI differently, we could handle that here
+    // But generally the optimistic UI update above should match the server result
+    
+  } catch (error) {
+    console.error('Error voting on comment:', error);
+    showToastMessage('Hmm, your comment vote didn\'t count. Please try again.', '#ff0099');
+    
+    // Revert UI changes by reloading the comments
+    // This is a simple approach; you could be more sophisticated by reverting just the affected elements
+    await loadComments(currentProposalId);
+  }
 }
 
 function getShareableImageUrl(proposal) {
@@ -1730,7 +1834,8 @@ async function loadComments(proposalId) {
   commentsContent.innerHTML = `<div class="comments-loading">Loading comments...</div>`;
   
   try {
-    const response = await fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`);
+    // Include the current user ID to get their votes
+    const response = await fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
     
     if (!response.ok) {
       throw new Error('Failed to fetch comments');
@@ -1762,13 +1867,25 @@ function renderComments(container, comments) {
   let commentsHtml = '';
   
   comments.forEach(comment => {
+    const upvotedClass = comment.userVote === 'upvote' ? 'upvoted' : '';
+    const downvotedClass = comment.userVote === 'downvote' ? 'downvoted' : '';
     commentsHtml += `
-      <div class="comment-item">
+      <div class="comment-item" data-comment-id="${comment.id}">
         <div class="comment-header">
           <div class="comment-author">${comment.user_name}</div>
           <div class="comment-time">${formatDate(comment.timestamp)}</div>
         </div>
         <div class="comment-text">${formatCommentText(comment.comment_text)}</div>
+        <div class="comment-vote-buttons">
+          <button class="comment-vote-button ${upvotedClass}" data-comment-id="${comment.id}" data-vote-type="upvote" onclick="handleCommentVote('${comment.id}', 'upvote')">
+            <span class="comment-vote-icon">▲</span>
+            <span class="comment-vote-count">${comment.upvotes || 0}</span>
+          </button>
+          <button class="comment-vote-button ${downvotedClass}" data-comment-id="${comment.id}" data-vote-type="downvote" onclick="handleCommentVote('${comment.id}', 'downvote')">
+            <span class="comment-vote-icon">▼</span>
+            <span class="comment-vote-count">${comment.downvotes || 0}</span>
+          </button>
+        </div>
       </div>
     `;
   });
