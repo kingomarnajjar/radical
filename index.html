@@ -1495,7 +1495,7 @@ function copyToClipboard(text) {
 // Create a modal to display when a proposal is opened via direct link
 function createProposalViewModal(proposal) {
     // Update meta tags for sharing
-    const ogImageUrl = getShareableImageUrl(proposal);
+    const ogImageUrl = proposal.share_image_url;
     const ogImageElement = document.querySelector('meta[property="og:image"]');
 if (ogImageElement) {
   ogImageElement.setAttribute('content', ogImageUrl);
@@ -1882,53 +1882,7 @@ async function handleCommentVote(commentId, voteType) {
   }
 }
 
-function getShareableImageUrl(proposal) {
-  // Base Cloudinary URL
-  const cloudinaryUrl = "https://res.cloudinary.com/dh8apmjya/image/fetch";
-  
-  // Make sure we have valid text to work with
-  const text = proposal.text || "Unknown petition";
-  const authorName = proposal.author_name || "Anonymous";
-  const encodedupVotes = proposal.upvotes || "fk all";
-  
-  // Encode the proposal text for URL - handle special characters better
-  // Limit text length to avoid excessively long URLs
-  const maxTextLength = 100;
-  const trimmedText = text.length > maxTextLength ? 
-    text.substring(0, maxTextLength) + '...' : text;
-  
-  const encodedText = encodeURIComponent(trimmedText)
-    .replace(/'/g, '%27')
-    .replace(/"/g, '%22')
-    .replace(/\(/g, '%28')
-    .replace(/\)/g, '%29')
-    .replace(/\*/g, '%2A');
-  
-  const encodedAuthor = encodeURIComponent(authorName)
-    .replace(/'/g, '%27')
-    .replace(/"/g, '%22');
-  
-  // Transformation parameters for text overlay - adjust for better readability
-  const textParams = 
-    `b_black,w_1200,h_600,c_fill` + 
-    `/l_text:Roboto_40_bold:${encodedText}` + 
-    `,co_rgb:EAEAEA,w_900,c_fit,g_north,y_120,x_60` +
-    `/l_text:Roboto_28_bold:${encodedAuthor}` + 
-    `,co_rgb:FF00FF,g_north_west,y_50,x_60`;
 
-  // URL of your template image in R2
-  const templateUrl = encodeURIComponent("https://radical.omar-c29.workers.dev/memes/petition-template.png");
-  
-  // Add a cache-busting parameter to prevent caching issues
-  const cacheBuster = Date.now();
-  
-  // Store the URL in a variable named finalUrl
-  const finalUrl = `${cloudinaryUrl}/${textParams}/${templateUrl}?cb=${cacheBuster}`;
-  
-  console.log('Generated final Cloudinary URL:', finalUrl);
-  
-  return finalUrl;
-}
 
 // Function to toggle comments visibility
 function toggleComments(proposalId, button) {
