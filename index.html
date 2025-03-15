@@ -1497,9 +1497,14 @@ function copyToClipboard(text) {
 function createProposalViewModal(proposal) {
     // Update meta tags for sharing
     const ogImageUrl = getShareableImageUrl(proposal);
-  document.getElementById('og-image').setAttribute('content', ogImageUrl);
-  document.getElementById('twitter-image').setAttribute('content', ogImageUrl);
-  
+    const ogImageElement = document.querySelector('meta[property="og:image"]');
+if (ogImageElement) {
+  ogImageElement.setAttribute('content', ogImageUrl);
+}
+const twitterImageElement = document.querySelector('meta[name="twitter:image"]');
+if (twitterImageElement) {
+  twitterImageElement.setAttribute('content', ogImageUrl);
+}  
   // Create modal elements
   const modalOverlay = document.createElement('div');
   modalOverlay.className = 'modal-overlay';
