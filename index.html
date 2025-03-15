@@ -203,7 +203,6 @@
         </div>
 
         <script>
-          console.log('Final Cloudinary URL being used for meta tags:', finalUrl);
 // Function to detect mobile devices
 function isMobileDevice() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -1919,8 +1918,12 @@ function getShareableImageUrl(proposal) {
   // Add a cache-busting parameter to prevent caching issues
   const cacheBuster = Date.now();
   
-  // Combine everything
-  return `${cloudinaryUrl}/${textParams}/${templateUrl}?cb=${cacheBuster}`;
+  // Store the URL in a variable named finalUrl
+  const finalUrl = `${cloudinaryUrl}/${textParams}/${templateUrl}?cb=${cacheBuster}`;
+  
+  console.log('Generated final Cloudinary URL:', finalUrl);
+  
+  return finalUrl;
 }
 
 // Function to toggle comments visibility
