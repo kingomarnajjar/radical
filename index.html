@@ -35,7 +35,8 @@
     type="image/jpg">
 <link rel="mask-icon" href="https://radical.omar-c29.workers.dev/memes/favicon.jpg"
     color="#ff0099">
-<meta property="og:image"
+    <meta property="og:image" content="${shareImageUrl}" id="og-image-custom" data-timestamp="${Date.now()}" />
+<!-- <meta property="og:image"
     content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG">
 <meta property="og:image:url"
     content="https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG">
@@ -67,7 +68,7 @@
 <link rel="apple-touch-icon" sizes="64x64"
     href="https://radical.omar-c29.workers.dev/memes/favicon.jpg">
 <link rel="apple-touch-icon" sizes="32x32"
-    href="https://radical.omar-c29.workers.dev/memes/favicon.jpg">
+    href="https://radical.omar-c29.workers.dev/memes/favicon.jpg"> -->
 
 <!-- Author -->
 <meta name="og:email" content="contact@theradicalparty.com">
@@ -202,6 +203,7 @@
         </div>
 
         <script>
+          console.log('Final Cloudinary URL being used for meta tags:', finalUrl);
 // Function to detect mobile devices
 function isMobileDevice() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
