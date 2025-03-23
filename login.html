@@ -1,0 +1,1278 @@
+.dictator-name {
+            padding: 8px;
+            font-size: 12px;
+            text-align: center;
+            font-weight: 500;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Login - RADICAL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff0099;
+            --secondary: #333;
+            --dark: #000;
+            --light: #fff;
+            --border: #444;
+            --gray: #777;
+            --error: #ff3333;
+            --success: #33cc33;
+            --bg-gradient: linear-gradient(to bottom, #111, #000);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background: var(--bg-gradient);
+            color: var(--light);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        header {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 3rem;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .login-container {
+            background-color: rgba(34, 34, 34, 0.7);
+            border: 1px solid var(--border);
+            border-radius: 0;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(255, 0, 153, 0.2);
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid var(--border);
+            background-color: rgba(0, 0, 0, 0.5);
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--dark);
+        }
+        
+        /* Webkit browsers custom scrollbar */
+        .emoji-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .emoji-grid::-webkit-scrollbar-track {
+            background: var(--dark);
+            border-radius: 4px;
+        }
+        
+        .emoji-grid::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+            border-radius: 4px;
+            border: 2px solid var(--dark);
+        }
+        
+        .emoji-grid::-webkit-scrollbar-thumb:hover {
+            background-color: #ff33aa;
+        }
+
+        .emoji-item {
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .emoji-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: scale(1.2);
+        }
+
+        .selected-emojis {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .emoji-slot {
+            width: 50px;
+            height: 50px;
+            border: 1px dashed var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            background-color: rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .emoji-slot.filled {
+            border-style: solid;
+        }
+
+        .emoji-slot .remove-emoji {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: var(--error);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .emoji-slot:hover .remove-emoji {
+            opacity: 1;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            background-color: var(--dark);
+            color: var(--light);
+            border: 1px solid var(--primary);
+            padding: 10px 20px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background-color: var(--primary);
+            color: var(--dark);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .clear-btn {
+            border-color: var(--gray);
+        }
+
+        .login-btn {
+            border-color: var(--primary);
+        }
+
+        .category-nav {
+            display: flex;
+            overflow-x: auto;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            gap: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--dark);
+        }
+        
+        /* Webkit browsers custom scrollbar */
+        .category-nav::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .category-nav::-webkit-scrollbar-track {
+            background: var(--dark);
+            border-radius: 3px;
+        }
+        
+        .category-nav::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+            border-radius: 3px;
+            border: 1px solid var(--dark);
+        }
+        
+        .section-title {
+            font-size: 1.4rem;
+            margin: 30px 0 10px;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .section-desc {
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            color: var(--light);
+            opacity: 0.8;
+        }
+        
+        .dictator-selection {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 10px 0;
+            margin-bottom: 25px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--dark);
+        }
+        
+        .dictator-selection::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .dictator-selection::-webkit-scrollbar-track {
+            background: var(--dark);
+            border-radius: 3px;
+        }
+        
+        .dictator-selection::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+            border-radius: 3px;
+            border: 1px solid var(--dark);
+        }
+        
+        .dictator-selection::-webkit-scrollbar-thumb:hover {
+            background-color: #ff33aa;
+        }
+        
+        .dictator-card {
+            min-width: 120px;
+            max-width: 120px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .dictator-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(255, 0, 153, 0.3);
+        }
+        
+        .dictator-card.selected {
+            border: 2px solid var(--primary);
+        }
+        
+        .dictator-card.selected::after {
+            content: "✓";
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: var(--primary);
+            color: var(--dark);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .dictator-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            filter: grayscale(50%) contrast(120%) brightness(80%);
+            display: block;
+        }
+        
+        .time-travel-targets {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .target-card {
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 0;
+            padding: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+        }
+        
+        .target-card:hover {
+            background-color: rgba(20, 20, 20, 0.8);
+            border-color: var(--primary);
+        }
+        
+        .target-card.selected {
+            border: 2px solid var(--primary);
+            background-color: rgba(40, 0, 20, 0.4);
+        }
+        
+        .target-card.selected::after {
+            content: "✓";
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: var(--primary);
+            color: var(--dark);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .target-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 50%;
+            filter: sepia(30%) contrast(120%);
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+        }
+        
+        .target-card.selected .target-image {
+            filter: sepia(0%) contrast(120%) brightness(90%);
+            border-color: var(--primary);
+        }
+        
+        .target-name {
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        
+        .target-desc {
+            font-size: 11px;
+            text-align: center;
+            color: var(--gray);
+            line-height: 1.3;
+        }
+
+        .category-btn {
+            padding: 5px 10px;
+            white-space: nowrap;
+            font-size: 12px;
+        }
+
+        .category-btn.active {
+            background-color: var(--primary);
+            color: var(--dark);
+        }
+
+        .search-container {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 15px;
+            border: 1px solid var(--border);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: var(--light);
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        .error-message {
+            color: var(--error);
+            margin-top: 10px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        .success-message {
+            color: var(--success);
+            margin-top: 10px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        .create-account {
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--gray);
+        }
+
+        .create-account a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .create-account a:hover {
+            text-decoration: underline;
+        }
+
+        .tooltip {
+            position: fixed;
+            max-width: 200px;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            border: 1px solid var(--primary);
+            padding: 8px;
+            font-size: 12px;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        @media (max-width: 500px) {
+            .emoji-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+            
+            .emoji-slot {
+                width: 40px;
+                height: 40px;
+                font-size: 24px;
+            }
+        }
+
+        /* Animation effects */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: var(--gray);
+        }
+    </style>
+</head>
+<body>
+    <div class="container animate-fade-in">
+        <header>
+            <h1>RADICAL</h1>
+            <div class="tagline">THE UNDERGROUND PARLIAMENT</div>
+            <p>Enter your emoji private key to join the rebellion</p>
+        </header>
+
+        <div class="login-container">
+            <h2 class="login-title">Select 5 Emojis for Your Private Key</h2>
+            
+            <div class="search-container">
+                <input type="text" id="emoji-search" class="search-input" placeholder="Search emojis...">
+                <span class="search-icon">🔍</span>
+            </div>
+            
+            <div class="category-nav" id="category-nav">
+                <!-- Categories will be added via JavaScript -->
+            </div>
+            
+            <div class="selected-emojis">
+                <div class="emoji-slot" data-index="0"></div>
+                <div class="emoji-slot" data-index="1"></div>
+                <div class="emoji-slot" data-index="2"></div>
+                <div class="emoji-slot" data-index="3"></div>
+                <div class="emoji-slot" data-index="4"></div>
+            </div>
+            
+            <div class="emoji-grid" id="emoji-grid">
+                <!-- Emojis will be loaded here via JavaScript -->
+            </div>
+            
+            <h3 class="section-title">Choose Your Favorite Dictator</h3>
+            <p class="section-desc">Every revolutionary needs an enemy. Select yours:</p>
+            
+            <div class="dictator-selection" id="dictator-selection">
+                <!-- Dictators will be loaded here via JavaScript -->
+            </div>
+            
+            <h3 class="section-title">Who Would You Kill?</h3>
+            <p class="section-desc">If you had one bullet in history's timeline, which freedom fighter deserves it?</p>
+            
+            <div class="time-travel-targets" id="time-travel-targets">
+                <!-- Time travel targets will be loaded here via JavaScript -->
+            </div>
+            
+            <div class="action-buttons">
+                <button class="clear-btn" id="clear-btn">Clear</button>
+                <button class="login-btn" id="login-btn" disabled>Enter RADICAL</button>
+            </div>
+            
+            <div class="error-message" id="error-message"></div>
+            <div class="success-message" id="success-message"></div>
+        </div>
+        
+        <div class="create-account">
+            Your 5-emoji combination works as both login and signup. <a href="#" title="Learn more about RADICAL security">How it works</a>
+        </div>
+        
+        <div class="footer">
+            RADICAL - Direct Democracy Movement 🇦🇺 &copy; 2025
+        </div>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Emoji categories with sample emojis for each category
+        const emojiCategories = [
+            { name: 'Frequently Used', emojis: [] },
+            { name: 'Smileys & People', emojis: ['😀', '😁', '😂', '🤣', '😃', '😄', '😅', '😆', '😉', '😊', '😋', '😎', '😍', '😘', '🥰', '😗', '😙', '😚', '🙂', '🤗', '🤩', '🤔', '🤨', '😐', '😑', '😶', '🙄', '😏', '😣', '😥', '😮', '🤐', '😯', '😪', '😫', '😴', '😌', '😛', '😜', '😝', '🤤', '😒', '😓', '😔', '😕', '🙃', '🤑', '😲', '☹️', '🙁', '😖', '😞', '😟', '😤', '😢', '😭', '😦', '😧', '😨', '😩', '🤯', '😬', '😰', '😱', '🥵', '🥶', '😳', '🤪', '😵', '😡', '😠', '🤬', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '😇', '🤠', '🤡', '🥳', '🥴', '🥺', '🤥', '🤫', '🤭', '🧐', '🤓', '👶', '👦', '👧', '👨', '👩', '👴', '👵'] },
+            { name: 'Animals & Nature', emojis: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🦝', '🐻', '🐼', '🦘', '🦡', '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦢', '🦉', '🦚', '🦜', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐚', '🐞', '🐜', '🦗', '🕷', '🕸', '🦂', '🦟', '🦠', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🐘', '🦏', '🦛', '🐪', '🐫', '🦙', '🦒', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🐐', '🦌', '🐕', '🐩', '🐈', '🐓', '🦃', '🕊', '🐇', '🐁', '🐀', '🐿', '🦔', '🐾', '🐉', '🐲', '🌵', '🎄', '🌲', '🌳', '🌴', '🌱', '🌿', '☘️', '🍀', '🎍', '🎋', '🍃', '🍂', '🍁', '🍄', '🌾', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻'] },
+            { name: 'Food & Drink', emojis: ['🍏', '🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥒', '🥬', '🌶', '🌽', '🥕', '🥔', '🍠', '🥐', '🍞', '🥖', '🥨', '🥯', '🧀', '🥚', '🍳', '🥞', '🥓', '🥩', '🍗', '🍖', '🌭', '🍔', '🍟', '🍕', '🥪', '🥙', '🌮', '🌯', '🥗', '🥘', '🥫', '🍝', '🍜', '🍲', '🍛', '🍣', '🍱', '🥟', '🍤', '🍙', '🍚', '🍘', '🍥', '🥠', '🥮', '🍢', '🍡', '🍧', '🍨', '🍦', '🥧', '🍰', '🎂', '🍮', '🍭', '🍬', '🍫', '🍿', '🧂', '🍩', '🍪', '🌰', '🥜', '🍯', '🥛', '🍼', '☕️', '🍵', '🥤', '🍶', '🍺', '🍻', '🥂', '🍷', '🥃', '🍸', '🍹', '🍾', '🥄', '🍴', '🍽', '🥣', '🥡', '🥢'] },
+            { name: 'Activities', emojis: ['⚽️', '🏀', '🏈', '⚾️', '🥎', '🏐', '🏉', '🎾', '🥏', '🎱', '🏓', '🏸', '🥅', '🏒', '🏑', '🥍', '🏏', '⛳️', '🏹', '🎣', '🥊', '🥋', '🎽', '⛸', '🥌', '🛷', '🛹', '🎿', '⛷', '🏂', '🏋️‍♀️', '🏋🏻‍♂️', '🤼‍♀️', '🤼‍♂️', '🤸‍♀️', '🤸‍♂️', '⛹️‍♀️', '⛹️‍♂️', '🤺', '🤾‍♀️', '🤾‍♂️', '🏌️‍♀️', '🏌️‍♂️', '🏇', '🧘‍♀️', '🧘‍♂️', '🏄‍♀️', '🏄‍♂️', '🏊‍♀️', '🏊‍♂️', '🤽‍♀️', '🤽‍♂️', '🚣‍♀️', '🚣‍♂️', '🧗‍♀️', '🧗‍♂️', '🚵‍♀️', '🚵‍♂️', '🚴‍♀️', '🚴‍♂️', '🎪', '🎭', '🎨', '🎬', '🎤', '🎧', '🎼', '🎹', '🥁', '🎷', '🎺', '🎸', '🎻', '🎲', '🧩', '♟', '🎯', '🎳', '🎮', '🎰'] },
+            { name: 'Travel & Places', emojis: ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎', '🚓', '🚑', '🚒', '🚐', '🚚', '🚛', '🚜', '🛴', '🚲', '🛵', '🏍', '🚨', '🚔', '🚍', '🚘', '🚖', '🚡', '🚠', '🚟', '🚃', '🚋', '🚞', '🚝', '🚄', '🚅', '🚈', '🚂', '🚆', '🚇', '🚊', '🚉', '✈️', '🛫', '🛬', '🛩', '💺', '🛰', '🚀', '🛸', '🚁', '🛶', '⛵️', '🚤', '🛥', '🛳', '⛴', '🚢', '⚓️', '⛽️', '🚧', '🚦', '🚥', '🚏', '🗺', '🗿', '🗽', '🗼', '🏰', '🏯', '🏟', '🎡', '🎢', '🎠', '⛲️', '⛱', '🏖', '🏝', '🏜', '🌋', '⛰', '🏔', '🗻', '🏕', '⛺️', '🏠', '🏡', '🏘', '🏚', '🏗', '🏭', '🏢', '🏬', '🏣', '🏤', '🏥', '🏦', '🏨', '🏪', '🏫', '🏩', '💒', '🏛', '⛪️', '🕌', '🕍', '🕋', '⛩', '🛤', '🛣', '🗾', '🎑', '🏞', '🌅', '🌄', '🌠', '🎇', '🎆', '🌇', '🌆', '🏙', '🌃', '🌌', '🌉', '🌁'] },
+            { name: 'Objects', emojis: ['⌚️', '📱', '📲', '💻', '⌨️', '🖥', '🖨', '🖱', '🖲', '🕹', '🗜', '💽', '💾', '💿', '📀', '📼', '📷', '📸', '📹', '🎥', '📽', '🎞', '📞', '☎️', '📟', '📠', '📺', '📻', '🎙', '🎚', '🎛', '⏱', '⏲', '⏰', '🕰', '⌛️', '⏳', '📡', '🔋', '🔌', '💡', '🔦', '🕯', '🗑', '🛢', '💸', '💵', '💴', '💶', '💷', '💰', '💳', '🧾', '💎', '⚖️', '🔧', '🔨', '⚒', '🛠', '⛏', '🔩', '⚙️', '⛓', '🔫', '💣', '🔪', '🗡', '⚔️', '🛡', '🚬', '⚰️', '⚱️', '🏺', '🧭', '🧱', '🔮', '🧿', '🧸', '📿', '💈', '⚗️', '🔭', '🧰', '🧲', '🧪', '🧫', '🧬', '🧯', '🔬', '🕳', '💊', '💉', '🌡', '🚽', '🚰', '🚿', '🛁', '🛀', '🛌', '🧻', '🧺', '🧹', '🧼', '🧽', '🛎', '🔑', '🗝', '🚪', '🛋', '🛏', '🛌', '🖼', '🛍', '🧳', '🛒', '🎁', '🎈', '🎏', '🎀', '🎊', '🎉', '🧨', '🎎', '🏮', '🎐', '🧧', '✉️', '📩', '📨', '📧', '💌', '📥', '📤', '📦', '🏷', '📪', '📫', '📬', '📭', '📮', '📯', '📜', '📃', '📄', '📑', '📊', '📈', '📉', '🗒', '🗓', '📆', '📅', '📇', '🗃', '🗳', '🗄', '📋', '📁', '📂', '🗂', '🗞', '📰', '📓', '📔', '📒', '📕', '📗', '📘', '📙', '📚', '📖', '🔖', '🔗', '📎', '🖇', '📐', '📏', '📌', '📍', '✂️', '🖊', '🖋', '✒️', '🖌', '🖍', '📝', '✏️', '🔍', '🔎', '🔏', '🔐', '🔒', '🔓'] },
+            { name: 'Symbols', emojis: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈️', '♉️', '♊️', '♋️', '♌️', '♍️', '♎️', '♏️', '♐️', '♑️', '♒️', '♓️', '🆔', '⚛️', '🉑', '☢️', '☣️', '📴', '📳', '🈶', '🈚️', '🈸', '🈺', '🈷️', '✴️', '🆚', '💮', '🉐', '㊙️', '㊗️', '🈴', '🈵', '🈹', '🈲', '🅰️', '🅱️', '🆎', '🆑', '🅾️', '🆘', '❌', '⭕️', '🛑', '⛔️', '📛', '🚫', '💯', '💢', '♨️', '🚷', '🚯', '🚳', '🚱', '🔞', '📵', '🚭', '❗️', '❕', '❓', '❔', '‼️', '⁉️', '🔅', '🔆', '〽️', '⚠️', '🚸', '🔱', '⚜️', '🔰', '♻️', '✅', '🈯️', '💹', '❇️', '✳️', '❎', '🌐', '💠', 'Ⓜ️', '🌀', '💤', '🏧', '🚾', '♿️', '🅿️', '🈳', '🈂️', '🛂', '🛃', '🛄', '🛅', '🚹', '🚺', '🚼', '🚻', '🚮', '🎦', '📶', '🈁', '🔣', 'ℹ️', '🔤', '🔡', '🔠', '🆖', '🆗', '🆙', '🆒', '🆕', '🆓', '0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '🔢', '#️⃣', '*️⃣', '⏏️', '▶️', '⏸', '⏯', '⏹', '⏺', '⏭', '⏮', '⏩', '⏪', '⏫', '⏬', '◀️', '🔼', '🔽', '➡️', '⬅️', '⬆️', '⬇️', '↗️', '↘️', '↙️', '↖️', '↕️', '↔️', '↪️', '↩️', '⤴️', '⤵️', '🔀', '🔁', '🔂', '🔄', '🔃', '🎵', '🎶', '➕', '➖', '➗', '✖️', '♾', '💲', '💱', '™️', '©️', '®️', '〰️', '➰', '➿', '🔚', '🔙', '🔛', '🔝', '🔜', '✔️', '☑️', '🔘', '⚪️', '⚫️', '🔴', '🔵', '🔺', '🔻', '🔸', '🔹', '🔶', '🔷', '🔳', '🔲', '▪️', '▫️', '◾️', '◽️', '◼️', '◻️', '⬛️', '⬜️', '🔈', '🔇', '🔉', '🔊', '🔔', '🔕', '📣', '📢', '👁‍🗨', '💬', '💭', '🗯', '♠️', '♣️', '♥️', '♦️', '🃏', '🎴', '🀄️', '🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛', '🕜', '🕝', '🕞', '🕟', '🕠', '🕡', '🕢', '🕣', '🕤', '🕥', '🕦', '🕧'] },
+            { name: 'Flags', emojis: ['🏳️', '🏴', '🏁', '🚩', '🏳️‍🌈', '🇦🇺', '🇦🇹', '🇧🇪', '🇧🇷', '🇨🇦', '🇨🇱', '🇨🇳', '🇨🇴', '🇩🇰', '🇫🇮', '🇫🇷', '🇩🇪', '🇬🇷', '🇭🇰', '🇮🇳', '🇮🇩', '🇮🇪', '🇮🇱', '🇮🇹', '🇯🇵', '🇰🇷', '🇲🇽', '🇳🇱', '🇳🇿', '🇳🇴', '🇵🇭', '🇵🇱', '🇵🇹', '🇷🇺', '🇸🇦', '🇸🇬', '🇿🇦', '🇪🇸', '🇸🇪', '🇨🇭', '🇹🇭', '🇹🇷', '🇺🇦', '🇦🇪', '🇬🇧', '🇺🇸', '🇻🇳'] }
+        ];
+
+        // Demo emoji combinations for login (in a real application, these would be stored securely)
+        const demoUsers = [
+            { username: 'Radical', combination: ['🔥', '🇦🇺', '🤔', '🚀', '💯'], dictator: 'stalin' },
+            { username: 'Admin', combination: ['🔒', '🔑', '👁️', '🛡️', '⚙️'], dictator: 'kim' },
+            { username: 'Test', combination: ['😀', '😃', '😄', '😁', '😆'], dictator: 'hitler' }
+        ];
+
+        // Dictator options
+        const dictators = [
+            { id: 'stalin', name: 'Joseph Stalin', image: 'https://i.imgur.com/NbKj0xK.jpg' },
+            { id: 'hitler', name: 'Adolf Hitler', image: 'https://i.imgur.com/1JXPWal.jpg' },
+            { id: 'kim', name: 'Kim Jong-un', image: 'https://i.imgur.com/LYPwCAt.jpg' },
+            { id: 'mao', name: 'Mao Zedong', image: 'https://i.imgur.com/LTF8NMR.jpg' },
+            { id: 'castro', name: 'Fidel Castro', image: 'https://i.imgur.com/JhMKGYN.jpg' },
+            { id: 'putin', name: 'Vladimir Putin', image: 'https://i.imgur.com/FW6Stcx.jpg' },
+            { id: 'mussolini', name: 'Benito Mussolini', image: 'https://i.imgur.com/t9rV0jI.jpg' },
+            { id: 'pol', name: 'Pol Pot', image: 'https://i.imgur.com/AZRJW2n.jpg' },
+            { id: 'kanye', name: 'Kanye West', image: 'https://i.imgur.com/DWZTaYQ.jpg' },
+            { id: 'khomeini', name: 'Ayatollah Khomeini', image: 'https://i.imgur.com/M7OPgQd.jpg' },
+            { id: 'netanyahu', name: 'Benjamin Netanyahu', image: 'https://i.imgur.com/9ZKJFy8.jpg' },
+            { id: 'zelensky', name: 'Volodymyr Zelensky', image: 'https://i.imgur.com/jANrPvB.jpg' },
+            { id: 'gaddafi', name: 'Muammar Gaddafi', image: 'https://i.imgur.com/UHrA5zc.jpg' },
+            { id: 'shapiro', name: 'Ben Shapiro', image: 'https://i.imgur.com/hbhMVsF.jpg' },
+            { id: 'musk', name: 'Elon Musk', image: 'https://i.imgur.com/1MFoUlY.jpg' }
+        ];
+
+        // Global variables
+        let selectedEmojis = [];
+        let currentCategory = 'Smileys & People';
+        let searchTimeout;
+        let loginAttempts = 0;
+        let selectedDictator = null;
+        let selectedTimeTarget = null;
+
+        // Time travel targets
+        const timeTargets = [
+            { id: 'mlk', name: 'Martin Luther King Jr.', desc: 'Civil rights leader who advocated for nonviolent protest', image: 'https://i.imgur.com/tYGZIel.jpg' },
+            { id: 'gandhi', name: 'Mahatma Gandhi', desc: 'Led India to independence through nonviolent civil disobedience', image: 'https://i.imgur.com/5TvW7rZ.jpg' },
+            { id: 'mandela', name: 'Nelson Mandela', desc: 'Anti-apartheid revolutionary and first Black president of South Africa', image: 'https://i.imgur.com/QN8Q44F.jpg' },
+            { id: 'jesus', name: 'Jesus Christ', desc: 'Religious leader who preached equality, compassion, and rebellion against systems of power', image: 'https://i.imgur.com/SsQhQmj.jpg' },
+            { id: 'xmen', name: 'Malcolm X', desc: 'African American Muslim minister and human rights activist', image: 'https://i.imgur.com/XOdV6KN.jpg' },
+            { id: 'chavez', name: 'Cesar Chavez', desc: 'Labor leader and civil rights activist for farm workers', image: 'https://i.imgur.com/KNtBwSF.jpg' },
+            { id: 'milk', name: 'Harvey Milk', desc: 'One of the first openly gay elected officials in the US', image: 'https://i.imgur.com/kF3bXq5.jpg' },
+            { id: 'tubman', name: 'Harriet Tubman', desc: 'Abolitionist who rescued enslaved people via the Underground Railroad', image: 'https://i.imgur.com/iE0xg58.jpg' }
+        ];
+
+        // Document ready
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize the app
+            initApp();
+        });
+
+        // Initialize the application
+        function initApp() {
+            // Setup category navigation
+            setupCategoryNav();
+            
+            // Load emojis for initial category
+            loadEmojisForCategory(currentCategory);
+            
+            // Setup dictator selection
+            setupDictatorSelection();
+            
+            // Setup time travel targets
+            setupTimeTargets();
+            
+            // Add event listeners
+            setupEventListeners();
+            
+            // Add randomly selected emojis to frequently used
+            populateFrequentlyUsed();
+        }
+
+        // Setup time travel targets
+        function setupTimeTargets() {
+            const targetContainer = document.getElementById('time-travel-targets');
+            
+            if (!targetContainer) return;
+            
+            // Clear any existing content
+            targetContainer.innerHTML = '';
+            
+            // Add time travel target cards
+            timeTargets.forEach(target => {
+                const card = document.createElement('div');
+                card.className = 'target-card';
+                card.dataset.targetId = target.id;
+                
+                const image = document.createElement('img');
+                image.className = 'target-image';
+                image.src = target.image;
+                image.alt = target.name;
+                image.loading = 'lazy';
+                
+                const name = document.createElement('div');
+                name.className = 'target-name';
+                name.textContent = target.name;
+                
+                const desc = document.createElement('div');
+                desc.className = 'target-desc';
+                desc.textContent = target.desc;
+                
+                card.appendChild(image);
+                card.appendChild(name);
+                card.appendChild(desc);
+                
+                // Add click event
+                card.addEventListener('click', () => {
+                    selectTimeTarget(target.id);
+                });
+                
+                targetContainer.appendChild(card);
+            });
+        }
+
+        // Select a time travel target
+        function selectTimeTarget(targetId) {
+            // Update selected target
+            selectedTimeTarget = targetId;
+            
+            // Update UI
+            const cards = document.querySelectorAll('.target-card');
+            cards.forEach(card => {
+                if (card.dataset.targetId === targetId) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+            
+            // Check if login button should be enabled
+            updateLoginButton();
+            
+            // Clear any error messages
+            clearMessages();
+        }
+
+        // Setup dictator selection
+        function setupDictatorSelection() {
+            const dictatorSelection = document.getElementById('dictator-selection');
+            
+            if (!dictatorSelection) return;
+            
+            // Clear any existing content
+            dictatorSelection.innerHTML = '';
+            
+            // Add dictator cards
+            dictators.forEach(dictator => {
+                const card = document.createElement('div');
+                card.className = 'dictator-card';
+                card.dataset.dictatorId = dictator.id;
+                
+                const image = document.createElement('img');
+                image.className = 'dictator-image';
+                image.src = dictator.image;
+                image.alt = dictator.name;
+                image.loading = 'lazy';
+                
+                const name = document.createElement('div');
+                name.className = 'dictator-name';
+                name.textContent = dictator.name;
+                
+                card.appendChild(image);
+                card.appendChild(name);
+                
+                // Add click event
+                card.addEventListener('click', () => {
+                    selectDictator(dictator.id);
+                });
+                
+                dictatorSelection.appendChild(card);
+            });
+        }
+
+        // Select a dictator
+        function selectDictator(dictatorId) {
+            // Update selected dictator
+            selectedDictator = dictatorId;
+            
+            // Update UI
+            const cards = document.querySelectorAll('.dictator-card');
+            cards.forEach(card => {
+                if (card.dataset.dictatorId === dictatorId) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+            
+            // Check if login button should be enabled
+            updateLoginButton();
+            
+            // Clear any error messages
+            clearMessages();
+        }
+
+        // Setup category navigation
+        function setupCategoryNav() {
+            const categoryNav = document.getElementById('category-nav');
+            
+            emojiCategories.forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'category-btn';
+                button.textContent = category.name;
+                button.dataset.category = category.name;
+                
+                if (category.name === currentCategory) {
+                    button.classList.add('active');
+                }
+                
+                button.addEventListener('click', () => {
+                    // Remove active class from all buttons
+                    document.querySelectorAll('.category-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked button
+                    button.classList.add('active');
+                    
+                    // Load emojis for this category
+                    currentCategory = category.name;
+                    loadEmojisForCategory(currentCategory);
+                });
+                
+                categoryNav.appendChild(button);
+            });
+        }
+
+        // Load emojis for a category
+        function loadEmojisForCategory(categoryName) {
+            const emojiGrid = document.getElementById('emoji-grid');
+            emojiGrid.innerHTML = '';
+            
+            const category = emojiCategories.find(cat => cat.name === categoryName);
+            
+            if (!category) return;
+            
+            category.emojis.forEach(emoji => {
+                const emojiItem = document.createElement('div');
+                emojiItem.className = 'emoji-item';
+                emojiItem.textContent = emoji;
+                emojiItem.title = `Click to select ${emoji}`;
+                
+                // Check if this emoji is already selected
+                if (selectedEmojis.includes(emoji)) {
+                    emojiItem.style.opacity = '0.5';
+                }
+                
+                emojiItem.addEventListener('click', () => {
+                    selectEmoji(emoji);
+                });
+                
+                // Show tooltip on hover
+                emojiItem.addEventListener('mouseenter', (e) => {
+                    showTooltip(e, emoji);
+                });
+                
+                emojiItem.addEventListener('mouseleave', () => {
+                    hideTooltip();
+                });
+                
+                emojiGrid.appendChild(emojiItem);
+            });
+        }
+
+        // Populate frequently used category with random emojis
+        function populateFrequentlyUsed() {
+            const allEmojis = [];
+            
+            // Collect all emojis from all categories except Frequently Used
+            emojiCategories.forEach(category => {
+                if (category.name !== 'Frequently Used') {
+                    allEmojis.push(...category.emojis);
+                }
+            });
+            
+            // Shuffle and pick 30 random emojis
+            const shuffled = allEmojis.sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, 30);
+            
+            // Set these as Frequently Used
+            const frequentlyUsedCategory = emojiCategories.find(cat => cat.name === 'Frequently Used');
+            if (frequentlyUsedCategory) {
+                frequentlyUsedCategory.emojis = selected;
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            const clearBtn = document.getElementById('clear-btn');
+            const loginBtn = document.getElementById('login-btn');
+            const searchInput = document.getElementById('emoji-search');
+            
+            // Clear button event
+            clearBtn.addEventListener('click', clearSelection);
+            
+            // Login button event
+            loginBtn.addEventListener('click', attemptLogin);
+            
+            // Search input event
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                
+                searchTimeout = setTimeout(() => {
+                    const searchTerm = searchInput.value.trim().toLowerCase();
+                    
+                    if (searchTerm) {
+                        searchEmojis(searchTerm);
+                    } else {
+                        // If search is cleared, return to current category
+                        loadEmojisForCategory(currentCategory);
+                    }
+                }, 300);
+            });
+        }
+
+        // Select an emoji
+        function selectEmoji(emoji) {
+            // Check if already selected
+            const index = selectedEmojis.indexOf(emoji);
+            
+            if (index !== -1) {
+                // If already selected, remove it
+                selectedEmojis.splice(index, 1);
+                updateSlots();
+                updateEmojiGrid();
+                return;
+            }
+            
+            // Check if we already have 5 emojis
+            if (selectedEmojis.length >= 5) {
+                showError('You can only select 5 emojis. Remove one first.');
+                return;
+            }
+            
+            // Add emoji to selected list
+            selectedEmojis.push(emoji);
+            
+            // Update the UI
+            updateSlots();
+            updateEmojiGrid();
+            
+            // Clear any error messages
+            clearMessages();
+            
+            // Check if we can enable login button
+            updateLoginButton();
+        }
+
+        // Update login button state
+        function updateLoginButton() {
+            const loginBtn = document.getElementById('login-btn');
+            loginBtn.disabled = selectedEmojis.length !== 5 || !selectedDictator || !selectedTimeTarget;
+        }
+
+        // Update the emoji slots
+        function updateSlots() {
+            const slots = document.querySelectorAll('.emoji-slot');
+            
+            slots.forEach((slot, index) => {
+                // Clear existing content
+                slot.innerHTML = '';
+                slot.classList.remove('filled');
+                
+                if (selectedEmojis[index]) {
+                    // Add emoji to slot
+                    slot.textContent = selectedEmojis[index];
+                    slot.classList.add('filled');
+                    
+                    // Add remove button
+                    const removeBtn = document.createElement('span');
+                    removeBtn.className = 'remove-emoji';
+                    removeBtn.textContent = '×';
+                    removeBtn.title = 'Remove emoji';
+                    
+                    removeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        removeEmojiAt(index);
+                    });
+                    
+                    slot.appendChild(removeBtn);
+                }
+            });
+        }
+
+        // Update emoji grid to show selected state
+        function updateEmojiGrid() {
+            const emojiItems = document.querySelectorAll('.emoji-item');
+            
+            emojiItems.forEach(item => {
+                const emoji = item.textContent;
+                
+                if (selectedEmojis.includes(emoji)) {
+                    item.style.opacity = '0.5';
+                } else {
+                    item.style.opacity = '1';
+                }
+            });
+        }
+
+        // Remove emoji at specific index
+        function removeEmojiAt(index) {
+            if (index >= 0 && index < selectedEmojis.length) {
+                selectedEmojis.splice(index, 1);
+                updateSlots();
+                updateEmojiGrid();
+                updateLoginButton();
+            }
+        }
+
+        // Clear selection
+        function clearSelection() {
+            selectedEmojis = [];
+            selectedDictator = null;
+            selectedTimeTarget = null;
+            
+            // Clear emoji selection
+            updateSlots();
+            updateEmojiGrid();
+            
+            // Clear dictator selection
+            const dictatorCards = document.querySelectorAll('.dictator-card');
+            dictatorCards.forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Clear time target selection
+            const targetCards = document.querySelectorAll('.target-card');
+            targetCards.forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            updateLoginButton();
+            clearMessages();
+        }
+
+        // Search emojis
+        function searchEmojis(term) {
+            const emojiGrid = document.getElementById('emoji-grid');
+            emojiGrid.innerHTML = '';
+            
+            // Temporary array to hold matching emojis
+            const matchingEmojis = [];
+            
+            // Check all categories for matching emojis
+            emojiCategories.forEach(category => {
+                category.emojis.forEach(emoji => {
+                    // For simplicity, just check if emoji contains the term
+                    // In a real app, you'd likely have emoji names/descriptions to search
+                    if (emoji.toLowerCase().includes(term)) {
+                        matchingEmojis.push(emoji);
+                    }
+                });
+            });
+            
+            // Display results
+            if (matchingEmojis.length === 0) {
+                emojiGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 20px;">No emojis found matching your search</div>';
+                return;
+            }
+            
+            // Display matching emojis
+            matchingEmojis.forEach(emoji => {
+                const emojiItem = document.createElement('div');
+                emojiItem.className = 'emoji-item';
+                emojiItem.textContent = emoji;
+                
+                // Check if this emoji is already selected
+                if (selectedEmojis.includes(emoji)) {
+                    emojiItem.style.opacity = '0.5';
+                }
+                
+                emojiItem.addEventListener('click', () => {
+                    selectEmoji(emoji);
+                });
+                
+                emojiGrid.appendChild(emojiItem);
+            });
+        }
+
+        // Attempt login/signup with emoji combination
+        function attemptLogin() {
+            // Validate that we have all required selections
+            if (selectedEmojis.length !== 5) {
+                showError('Please select exactly 5 emojis for your private key');
+                return;
+            }
+            
+            if (!selectedDictator) {
+                showError('Please select your favorite dictator');
+                return;
+            }
+            
+            if (!selectedTimeTarget) {
+                showError('Please select who you would eliminate if you could time travel');
+                return;
+            }
+            
+            // Generate a unique hash from emoji combination (simplified for demo)
+            const emojiKey = selectedEmojis.join('');
+            
+            // Check if this is a known combination (existing account)
+            const matchUser = demoUsers.find(user => {
+                return compareArrays(user.combination, selectedEmojis);
+            });
+            
+            if (matchUser) {
+                // Known combination - this is a login
+                showSuccess(`Welcome back, ${matchUser.username}!`);
+                
+                // Get dictator name
+                const dictator = dictators.find(d => d.id === selectedDictator);
+                const dictatorName = dictator ? dictator.name : 'Unknown Dictator';
+                
+                // Get time target name
+                const timeTarget = timeTargets.find(t => t.id === selectedTimeTarget);
+                const timeTargetName = timeTarget ? timeTarget.name : 'Unknown Target';
+                
+                animateLoginSuccess(false, matchUser.username, dictatorName, timeTargetName);
+            } else {
+                // New combination - this is a signup, create new account
+                // In a real app, you would store this new combination
+                
+                // Generate a random username for demo
+                const newUsername = 'Citizen_' + Math.floor(Math.random() * 10000);
+                
+                // Get dictator name
+                const dictator = dictators.find(d => d.id === selectedDictator);
+                const dictatorName = dictator ? dictator.name : 'Unknown Dictator';
+                
+                // Get time target name
+                const timeTarget = timeTargets.find(t => t.id === selectedTimeTarget);
+                const timeTargetName = timeTarget ? timeTarget.name : 'Unknown Target';
+                
+                // Show success for new account
+                showSuccess(`New key registered! Welcome to RADICAL, ${newUsername}!`);
+                animateLoginSuccess(true, newUsername, dictatorName, timeTargetName);
+            }
+        }
+
+        // Compare two arrays for equality (order matters)
+        function compareArrays(arr1, arr2) {
+            if (arr1.length !== arr2.length) return false;
+            
+            for (let i = 0; i < arr1.length; i++) {
+                if (arr1[i] !== arr2[i]) return false;
+            }
+            
+            return true;
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            
+            // Clear success message
+            document.getElementById('success-message').textContent = '';
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const successMessage = document.getElementById('success-message');
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            
+            // Clear error message
+            document.getElementById('error-message').textContent = '';
+        }
+
+        // Clear messages
+        function clearMessages() {
+            document.getElementById('error-message').textContent = '';
+            document.getElementById('success-message').textContent = '';
+        }
+
+        // Show tooltip
+        function showTooltip(event, emoji) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.textContent = `Select ${emoji}`;
+            tooltip.style.left = `${event.clientX + 10}px`;
+            tooltip.style.top = `${event.clientY + 10}px`;
+            tooltip.style.opacity = '1';
+        }
+
+        // Hide tooltip
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.opacity = '0';
+        }
+
+        // Animate successful login/signup
+        function animateLoginSuccess(isNewUser, username, dictatorName, timeTargetName) {
+            // Disable inputs
+            document.getElementById('login-btn').disabled = true;
+            document.getElementById('clear-btn').disabled = true;
+            document.querySelectorAll('.emoji-item').forEach(item => {
+                item.style.pointerEvents = 'none';
+            });
+            document.querySelectorAll('.dictator-card, .target-card').forEach(card => {
+                card.style.pointerEvents = 'none';
+            });
+            
+            // Add success class to container
+            document.querySelector('.login-container').classList.add('pulse');
+            
+            // Get the selected emojis as a display string
+            const emojiDisplay = selectedEmojis.join(' ');
+            
+            // Get the dictator image
+            const dictator = dictators.find(d => d.id === selectedDictator);
+            const dictatorImage = dictator ? dictator.image : '';
+            
+            // Get the time target image
+            const timeTarget = timeTargets.find(t => t.id === selectedTimeTarget);
+            const timeTargetImage = timeTarget ? timeTarget.image : '';
+            
+            // Simulate redirect after animation
+            setTimeout(() => {
+                // Show a message instead of reloading
+                document.querySelector('.login-container').innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px;">
+                        <h2 style="color: var(--primary); margin-bottom: 20px;">🚀 Welcome to RADICAL, ${username}!</h2>
+                        <p style="margin-bottom: 20px;">
+                            ${isNewUser ? 
+                            'Your profile has been registered. Welcome to the underground parliament!' : 
+                            'You have successfully accessed the underground parliament.'}
+                        </p>
+                        
+                        <div style="margin: 30px 0;">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <p style="margin-bottom: 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">YOUR PRIVATE KEY</p>
+                                <div style="font-size: 36px; line-height: 1.2;">${emojiDisplay}</div>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: center; align-items: center; gap: 30px; margin-top: 30px;">
+                                <div style="text-align: center;">
+                                    <p style="margin-bottom: 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">YOUR ENEMY</p>
+                                    <img src="${dictatorImage}" style="width: 80px; height: 80px; object-fit: cover; border: 1px solid var(--primary);">
+                                    <p style="margin-top: 5px; font-size: 12px;">${dictatorName}</p>
+                                </div>
+                                
+                                <div style="text-align: center;">
+                                    <p style="margin-bottom: 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">YOUR TARGET</p>
+                                    <img src="${timeTargetImage}" style="width: 80px; height: 80px; object-fit: cover; border: 1px solid var(--primary); border-radius: 50%;">
+                                    <p style="margin-top: 5px; font-size: 12px;">${timeTargetName}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p style="color: var(--primary); font-size: 12px; margin-top: 10px; margin-bottom: 25px;">Remember your emoji combination - it's the only way to access your account!</p>
+                        
+                        <div style="margin-top: 30px;">
+                            <p>Establishing secure connection...</p>
+                            <div class="loader" style="display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,0,153,.3); border-radius: 50%; border-top-color: var(--primary); animation: spin 1s ease-in-out infinite; margin-top: 10px;"></div>
+                        </div>
+                    </div>
+                    <style>
+                        @keyframes spin {
+                            to { transform: rotate(360deg); }
+                        }
+                    </style>
+                `;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
