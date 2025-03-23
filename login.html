@@ -1079,64 +1079,78 @@ V<!DOCTYPE html>
         }
 
         // Attempt login/signup with emoji combination
-        function attemptLogin() {
-            // Validate that we have all required selections
-            if (selectedEmojis.length !== 5) {
-                showError('Please select exactly 5 emojis for your private key');
-                return;
-            }
-            
-            if (!selectedDictator) {
-                showError('Please select your favorite dictator');
-                return;
-            }
-            
-            if (!selectedTimeTarget) {
-                showError('Please select who you would eliminate if you could time travel');
-                return;
-            }
-            
-            // Generate a unique hash from emoji combination (simplified for demo)
-            const emojiKey = selectedEmojis.join('');
-            
-            // Check if this is a known combination (existing account)
-            const matchUser = demoUsers.find(user => {
-                return compareArrays(user.combination, selectedEmojis);
-            });
-            
-            if (matchUser) {
-                // Known combination - this is a login
-                showSuccess(`Welcome back, ${matchUser.username}!`);
-                
-                // Get dictator name
-                const dictator = dictators.find(d => d.id === selectedDictator);
-                const dictatorName = dictator ? dictator.name : 'Unknown Dictator';
-                
-                // Get time target name
-                const timeTarget = timeTargets.find(t => t.id === selectedTimeTarget);
-                const timeTargetName = timeTarget ? timeTarget.name : 'Unknown Target';
-                
-                animateLoginSuccess(false, matchUser.username, dictatorName, timeTargetName);
-            } else {
-                // New combination - this is a signup, create new account
-                // In a real app, you would store this new combination
-                
-                // Generate a random username for demo
-                const newUsername = 'Citizen_' + Math.floor(Math.random() * 10000);
-                
-                // Get dictator name
-                const dictator = dictators.find(d => d.id === selectedDictator);
-                const dictatorName = dictator ? dictator.name : 'Unknown Dictator';
-                
-                // Get time target name
-                const timeTarget = timeTargets.find(t => t.id === selectedTimeTarget);
-                const timeTargetName = timeTarget ? timeTarget.name : 'Unknown Target';
-                
-                // Show success for new account
-                showSuccess(`New key registered! Welcome to RADICAL, ${newUsername}!`);
-                animateLoginSuccess(true, newUsername, dictatorName, timeTargetName);
-            }
-        }
+      // Updated attemptLogin function for login.html
+function attemptLogin() {
+  // Validate that we have all required selections
+  if (selectedEmojis.length !== 5) {
+    showError('Please select exactly 5 emojis for your private key');
+    return;
+  }
+  
+  if (!selectedDictator) {
+    showError('Please select your favorite dictator');
+    return;
+  }
+  
+  if (!selectedTimeTarget) {
+    showError('Please select who you would eliminate if you could time travel');
+    return;
+  }
+  
+  // Show loading state
+  const loginBtn = document.getElementById('login-btn');
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Processing...';
+  
+  // Prepare data for the server
+  const loginData = {
+    emojiCombination: selectedEmojis,
+    selectedDictator: selectedDictator,
+    selectedTarget: selectedTimeTarget
+  };
+  
+  // Send login request to server
+  fetch('https://theradicalparty.com/api/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(loginData)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showSuccess(data.isNewUser ? 
+        `New key registered! Welcome to RADICAL, ${data.username}!` : 
+        `Welcome back, ${data.username}!`);
+      
+      // Get dictator name
+      const dictator = dictators.find(d => d.id === selectedDictator);
+      const dictatorName = dictator ? dictator.name : 'Unknown Dictator';
+      
+      // Get time target name
+      const timeTarget = timeTargets.find(t => t.id === selectedTimeTarget);
+      const timeTargetName = timeTarget ? timeTarget.name : 'Unknown Target';
+      
+      // Show success animation/redirect
+      animateLoginSuccess(data.isNewUser, data.username, dictatorName, timeTargetName);
+      
+      // Store user session (you may want to implement this)
+      localStorage.setItem('radical_user_id', data.userId);
+      localStorage.setItem('radical_username', data.username);
+    } else {
+      showError(data.message || 'Login failed. Please try again.');
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Enter RADICAL';
+    }
+  })
+  .catch(error => {
+    console.error('Login error:', error);
+    showError('Network error. Please try again.');
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Enter RADICAL';
+  });
+}
 
         // Compare two arrays for equality (order matters)
         function compareArrays(arr1, arr2) {
