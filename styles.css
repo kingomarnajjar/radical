@@ -1218,3 +1218,25 @@ a {
       padding: 2px 4px;
     }
   }
+
+  .login-link {
+    display: inline-block;
+    background-color: var(--primary);
+    color: var(--dark);
+    padding: 8px 20px;
+    border-radius: 0;
+    font-size: 0.9rem;
+    margin-top: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-link:hover {
+    background-color: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(255, 0, 153, 0.4);
+}
