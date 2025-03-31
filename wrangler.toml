@@ -11,7 +11,7 @@ database_id = "1f2a5273-bfcb-45c8-a759-5d675c05620c"
 # R2 Bucket Binding
 [[r2_buckets]]
 binding = "MEMES_BUCKET"
-bucket_name = "radical-memes"
+bucket_name = "memes"
 
 # Environment variables (optional)
 [vars]
