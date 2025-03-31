@@ -27,6 +27,12 @@ export default {
         return handleOptions();
       }
 
+       // Check if this is an API request (starts with /api/)
+       if (!path.startsWith('/api/')) {
+        // For non-API routes, pass through to Cloudflare Pages
+        return fetch(request);
+      }
+
       // For GET requests, try to serve from cache first
       if (request.method === "GET") {
         // Create a cache key from the request URL
@@ -2311,6 +2317,4 @@ async function createOrGetUser(request, env) {
       details: logError(error, { action: 'user_outer' })
     }, 500);
   }
-
-  
 }
