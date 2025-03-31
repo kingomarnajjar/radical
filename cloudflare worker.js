@@ -979,14 +979,15 @@ function handleOptions() {
 }
 
 // Helper to create standardized responses
-function createResponse(body, status = 200, shouldCache = false, cacheDuration = 300) {
+function createResponse(body, status = 200, cacheDuration = 60*60*24) {
   const headers = {
     'Content-Type': 'application/json',
     ...corsHeaders
   };
   
-  if (shouldCache) {
+  if (cacheDuration > 0) {
     headers['Cache-Control'] = `public, max-age=${cacheDuration}`;
+    headers['CDN-Cache-Control'] = `public, max-age=${cacheDuration}`;
   } else {
     headers['Cache-Control'] = 'no-store';
   }
