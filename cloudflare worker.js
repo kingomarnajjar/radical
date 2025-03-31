@@ -55,7 +55,7 @@ export default {
       if (path === '/styles.css') {
         try {
           // Fetch CSS from GitHub Pages
-          const response = await fetch('https://kingomarnajjar.github.io/radical/styles.css', {
+          const response = await fetch('https://radical.pages.dev/radical/styles.css', {
             headers: {
               'User-Agent': request.headers.get('User-Agent') || 'Cloudflare Worker'
             }
@@ -267,8 +267,8 @@ export default {
 
 async function serveMainPage(request, env) {
   try {
-    // Fetch from GitHub Pages
-    const response = await fetch('https://kingomarnajjar.github.io/radical/index.html', {
+    // Fetch directly from Cloudflare Pages
+    const response = await fetch('https://radical.pages.dev/index.html', {
       headers: {
         'User-Agent': request.headers.get('User-Agent') || 'Cloudflare Worker'
       }
@@ -302,7 +302,7 @@ async function serveLoginPage(request, env) {
   try {
     // Fetch the login HTML file from your storage
     // You could store this in R2 bucket or GitHub Pages like your other static files
-    const response = await fetch('https://kingomarnajjar.github.io/radical/login.html', {
+    const response = await fetch('https://radical.pages.dev/radical/login.html', {
       headers: {
         'User-Agent': request.headers.get('User-Agent') || 'Cloudflare Worker'
       }
