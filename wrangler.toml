@@ -17,16 +17,7 @@ bucket_name = "radical-memes"
 [vars]
 ENVIRONMENT = "production"
 
-# Cloudflare Pages deployment settings
-[build]
-command = "npm run build"
-publish = "dist"
-
 # Routes (if using workers.dev)
 [[routes]]
 pattern = "theradicalparty.com/api/*"
 zone_name = "theradicalparty.com"
-
-# Optional: Specific Node.js version
-[build.environment]
-NODE_VERSION = "18.16.0"
