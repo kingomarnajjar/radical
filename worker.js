@@ -1,9 +1,8 @@
-// Define CORS headers - These need to be applied to *all* responses
+// Define CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Access-Control-Max-Age': '86400', // 24 hours
 };
 
 // Handle OPTIONS request for CORS preflight
@@ -13,11 +12,11 @@ function handleOptions() {
   });
 }
 
-// Helper to create standardized responses with CORS headers
+// Helper to create standardized responses
 function createResponse(body, status = 200, cacheDuration = 60*60*24) {
   const headers = {
     'Content-Type': 'application/json',
-    ...corsHeaders // Make sure CORS headers are added to every response
+    ...corsHeaders // Add CORS headers
   };
   
   if (cacheDuration > 0) {
@@ -48,10 +47,7 @@ export default {
       // Check if the hostname is valid
       if (!validHostnames.includes(url.hostname)) {
         console.error(`Unexpected hostname: ${url.hostname}`);
-        return new Response('Invalid hostname', { 
-          status: 400,
-          headers: corsHeaders // Add CORS headers even to error responses
-        });
+        return new Response('Invalid hostname', { status: 400 });
       }
 
       const path = url.pathname;
@@ -60,7 +56,7 @@ export default {
       console.log(`Processing request: ${url.toString()}`);
       console.log(`User-Agent: ${request.headers.get('User-Agent')}`);
 
-      // Handle CORS preflight requests first - this is critical
+      // Handle CORS preflight requests first
       if (request.method === 'OPTIONS') {
         return handleOptions();
       }
@@ -103,7 +99,7 @@ export default {
             console.error('Failed to fetch styles.css', response.status, response.statusText);
             return new Response('CSS File Not Found', { 
               status: 404,
-              headers: corsHeaders // Add CORS headers
+              headers: corsHeaders
             });
           }
           
@@ -133,7 +129,7 @@ export default {
           console.error('Error fetching styles.css:', error);
           return new Response('Internal Server Error', { 
             status: 500,
-            headers: corsHeaders // Add CORS headers
+            headers: corsHeaders
           });
         }
       }
@@ -290,36 +286,22 @@ export default {
         }
       }
       
-    // If no other handler catches the request, return a 404
-    return createResponse({ 
-      error: 'Not found', 
-      path,
-      method: request.method,
-      availableRoutes: [
-        { path: '/api/health', method: 'GET', description: 'Check system health' },
-        { path: '/api/proposals', method: 'GET', description: 'Get proposals' },
-        { path: '/api/proposals/:id', method: 'GET', description: 'Get a single proposal by ID' },
-        { path: '/api/proposals/:id', method: 'PUT', description: 'Update proposal' },
-        { path: '/api/votes', method: 'POST', description: 'Create/update vote' },
-        { path: '/api/users', method: 'POST', description: 'Create/get user' },
-        { path: '/api/petition-stats', method: 'GET', description: 'Get petition statistics' }
-      ]
-    }, 404);
-    
-  } catch (error) {
-    console.error('Critical error in request handling:', error);
-    return new Response(JSON.stringify({
-      error: 'Internal Server Error',
-      details: error.message
-    }), { 
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        ...corsHeaders // Add CORS headers to error responses too
-      }
-    });
+      return response;
+      
+    } catch (error) {
+      console.error('Critical error in request handling:', error);
+      return new Response(JSON.stringify({
+        error: 'Internal Server Error',
+        details: error.message
+      }), { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders // Add CORS headers to error responses too
+        }
+      });
+    }
   }
-}
 };
 
 
@@ -958,7 +940,9 @@ async function uploadMeme(request, env) {
       details: logError(error, { action: 'upload_meme' })
     }, 500);
   }
-}// Get petition statistics
+}
+
+// Get petition statistics
 async function getPetitionStats(request, env) {
   try {
     const url = new URL(request.url);
@@ -1009,12 +993,7 @@ async function getPetitionStats(request, env) {
       details: logError(error, { action: 'petition_stats', proposalId })
     }, 500);
   }
-}// Define CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+}
 
 // Helper to log detailed errors 
 function logError(error, context = {}) {
@@ -1028,372 +1007,6 @@ function logError(error, context = {}) {
   console.error(JSON.stringify(errorDetails));
   return errorDetails;
 }
-
-// Handle OPTIONS request for CORS preflight
-function handleOptions() {
-  return new Response(null, {
-    headers: corsHeaders
-  });
-}
-
-// Helper to create standardized responses
-function createResponse(body, status = 200, shouldCache = false, cacheDuration = 300) {
-  const headers = {
-    'Content-Type': 'application/json',
-    ...corsHeaders
-  };
-  
-  if (shouldCache) {
-    headers['Cache-Control'] = `public, max-age=${cacheDuration}`;
-  } else {
-    headers['Cache-Control'] = 'no-store';
-  }
-  
-  return new Response(JSON.stringify(body), {
-    status,
-    headers
-  });
-}
-
-
-async function verifyTemplateImage(env) {
-  try {
-    const key = "petition-template.png";
-    const object = await env.MEMES_BUCKET.get(key);
-    
-    if (object === null) {
-      console.error("❌ Template image not found in R2 bucket!");
-      return false;
-    }
-    
-    console.log("✅ Template image found in R2 bucket");
-    return true;
-  } catch (error) {
-    console.error("Error verifying template image:", error);
-    return false;
-  }
-}
-
-
-/**
- * Handle requests for dynamic SVG images for petitions
- * @param {Request} request - The incoming request
- * @param {Object} env - Environment bindings
- * @returns {Response} - SVG response
- */
-async function servePetitionSVG(request, env) {
-  try {
-    const url = new URL(request.url);
-    const proposalId = url.searchParams.get('id');
-    
-    if (!proposalId) {
-      return new Response('Missing proposal ID', { status: 400 });
-    }
-    
-    console.log(`Generating SVG image for proposal: ${proposalId}`);
-    
-    // Fetch the proposal data from the database
-    const proposal = await env.DB.prepare(`
-      SELECT 
-        p.id, p.text, p.timestamp,
-        u.name as author_name,
-        (SELECT COUNT(*) FROM votes WHERE proposal_id = p.id AND vote_type = 'upvote') as upvotes,
-        (SELECT COUNT(*) FROM votes WHERE proposal_id = p.id AND vote_type = 'downvote') as downvotes
-      FROM proposals p
-      JOIN users u ON p.author_id = u.id
-      WHERE p.id = ?
-    `).bind(proposalId).first();
-    
-    if (!proposal) {
-      return new Response('Proposal not found', { status: 404 });
-    }
-    
-    // Generate the SVG
-    const svgMarkup = generatePetitionSVG(proposal);
-    
-    // Return the SVG with appropriate headers
-    return new Response(svgMarkup, {
-      headers: {
-        'Content-Type': 'image/svg+xml',
-        'Cache-Control': 'public, max-age=360000', // Cache for 1 hour
-        'Access-Control-Allow-Origin': '*'
-      }
-    });
-  } catch (error) {
-    console.error('Error generating petition SVG:', error);
-    return new Response('Internal Server Error', { status: 500 });
-  }
-}
-
-/**
- * Generates a dynamic SVG for a petition with the given data
- * @param {Object} proposal - The petition/proposal data
- * @returns {string} - SVG markup as a string
- */
-function generatePetitionSVG(proposal) {
-  // Get data with fallbacks
-  const petitionText = proposal.text || "Unknown petition";
-  const upvotes = proposal.upvotes || 0;
-  const downvotes = proposal.downvotes || 0;
-  const netVotes = upvotes - downvotes;
-  const netVotesDisplay = netVotes > 0 ? `+${netVotes}` : netVotes;
-  const netVotesColor = netVotes > 0 ? "#11cc77" : (netVotes < 0 ? "#ff0099" : "#ffffff");
-  const proposalId = proposal.id || "unknown";
-  
-  // Format timestamp
-  const timestamp = new Date(proposal.timestamp || Date.now()).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-  
-  // Base SVG template
-  const svgTemplate = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
-  <!-- Background -->
-  <rect width="1200" height="630" fill="#000000" />
-  
-  <!-- Border frame with glowing effect -->
-  <rect x="10" y="10" width="1180" height="610" fill="none" stroke="#ff0099" stroke-width="4" rx="0" />
-  <rect x="20" y="20" width="1160" height="590" fill="rgba(0, 0, 0, 0.8)" stroke="#ff0099" stroke-width="1" rx="0" 
-        style="filter: drop-shadow(0 0 10px #ff0099)" />
-  
-  <!-- RADICAL Header -->
-  <text x="600" y="90" font-family="'Roboto Mono', monospace" font-size="72" font-weight="700" text-anchor="middle" 
-        fill="#ff0099" style="text-transform: uppercase;">RADICAL</text>
-  
-  <!-- Tagline -->
-  <rect x="450" y="110" width="300" height="36" fill="#ff0099" />
-  <text x="600" y="135" font-family="'Roboto Mono', monospace" font-size="20" font-weight="600" text-anchor="middle" 
-        fill="#000000" style="text-transform: uppercase;">VIBE, VOTE, VETO</text>
-  
-  <!-- Petition text container -->
-  <rect x="100" y="180" width="1000" height="280" fill="rgba(17, 17, 17, 0.7)" stroke="#333333" stroke-width="1" />
-  
-  <!-- Petition text (dynamically generated) -->
-  ${generateSVGTextLines(petitionText, 120, 220, 960)}
-  
-  <!-- Vote statistics -->
-  <g transform="translate(200, 510)">
-    <!-- Upvotes -->
-    <text x="0" y="0" font-family="'Roboto Mono', monospace" font-size="24" fill="#ff0099">▲</text>
-    <text x="30" y="0" font-family="'Roboto Mono', monospace" font-size="24" fill="#ffffff">${upvotes}</text>
-    
-    <!-- Downvotes -->
-    <text x="120" y="0" font-family="'Roboto Mono', monospace" font-size="24" fill="#ff0099">▼</text>
-    <text x="150" y="0" font-family="'Roboto Mono', monospace" font-size="24" fill="#ffffff">${downvotes}</text>
-    
-    <!-- Net votes -->
-    <text x="240" y="0" font-family="'Roboto Mono', monospace" font-size="24" fill="#ff0099">NET:</text>
-    <text x="300" y="0" font-family="'Roboto Mono', monospace" font-size="24" fill="${netVotesColor}">${netVotesDisplay}</text>
-  </g>
-  
-  <!-- Timestamp and ID -->
-  <text x="600" y="560" font-family="'Roboto Mono', monospace" font-size="18" fill="#aaaaaa" text-anchor="middle">
-    Petition ID: ${proposalId} • Created: ${timestamp}
-  </text>
-  
-  <!-- Radical Logo / Brand (right corner) -->
-  <g transform="translate(940, 460)">
-    <!-- Pink square for the logo -->
-    <rect x="0" y="0" width="120" height="120" fill="#111111" stroke="#ff0099" stroke-width="2" />
-    <text x="60" y="50" font-family="'Roboto Mono', monospace" font-size="16" fill="#ffffff" text-anchor="middle">RADICAL</text>
-    <text x="60" y="75" font-family="'Roboto Mono', monospace" font-size="14" fill="#ff0099" text-anchor="middle">PETITION</text>
-    <text x="60" y="100" font-family="'Roboto Mono', monospace" font-size="12" fill="#aaaaaa" text-anchor="middle">#${proposalId.slice(-6)}</text>
-  </g>
-  
-  <!-- URL -->
-  <text x="600" y="600" font-family="'Roboto Mono', monospace" font-size="20" fill="#ff0099" text-anchor="middle" 
-        style="text-transform: uppercase;">theradicalparty.com</text>
-</svg>`;
-
-  return svgTemplate;
-}
-
-/**
- * Generates SVG text elements with proper line wrapping
- * @param {string} text - The text to wrap
- * @param {number} x - Starting x position
- * @param {number} y - Starting y position
- * @param {number} width - Maximum width for text wrapping
- * @returns {string} - SVG text elements
- */
-function generateSVGTextLines(text, x, y, width) {
-  // Simple word wrapping algorithm
-  const words = text.split(' ');
-  const lines = [];
-  let currentLine = '';
-  
-  // Estimate characters per line based on width and average character width
-  const avgCharWidth = 22; // Rough estimate for font size ~36px
-  const charsPerLine = Math.floor(width / avgCharWidth);
-  
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    if (testLine.length <= charsPerLine) {
-      currentLine = testLine;
-    } else {
-      lines.push(currentLine);
-      currentLine = word;
-    }
-  }
-  
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-  
-  // Limit to 6 lines to fit in the container
-  const limitedLines = lines.slice(0, 6);
-  if (lines.length > 6) {
-    // Add ellipsis to the last line if truncated
-    limitedLines[5] = limitedLines[5].slice(0, -3) + '...';
-  }
-  
-  // Generate SVG text elements
-  const lineHeight = 46;
-  let svgTextElements = '';
-  
-  limitedLines.forEach((line, index) => {
-    const lineY = y + index * lineHeight;
-    svgTextElements += `<text x="${x}" y="${lineY}" font-family="'Roboto Mono', monospace" font-size="36" fill="#ffffff">${escapeHTML(line)}</text>\n`;
-  });
-  
-  return svgTextElements;
-}
-
-/**
- * Escapes HTML special characters in a string
- * @param {string} text - The text to escape
- * @returns {string} - Escaped text
- */
-function escapeHTML(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-// Update the getShareableImageUrl function to use the SVG endpoint
-function getShareableImageUrl(proposal) {
-  // Use the dynamic SVG endpoint with the proposal ID
-  return `https://${new URL(request.url).hostname}/api/petition-svg?id=${proposal.id}`;
-}
-
-// Update the serveCustomizedHtml function to use the SVG URL for meta tags
-async function serveCustomizedHtml(proposalId, request, env) {
-  console.log(`===== BEGIN serveCustomizedHtml for proposal ${proposalId} =====`);
-  
-  try {
-    const url = new URL(request.url);
-    const isTestMeta = url.searchParams.get('test_meta') === 'true';
-    
-    // Determine which proposal to use
-    let proposal;
-    let shareImageUrl;
-    
-    if (isTestMeta) {
-      // Use test proposal data
-      proposal = {
-        id: 'test_proposal',
-        text: 'This is a test proposal for meta tags',
-        timestamp: Date.now(),
-        author_name: 'Test User'
-      };
-      shareImageUrl = `https://${url.hostname}/api/petition-svg?id=test_proposal`;
-    } else {
-      // Fetch the actual proposal from the database
-      proposal = await env.DB.prepare(`
-        SELECT 
-          p.id, p.text, p.timestamp,
-          u.name as author_name
-        FROM proposals p
-        JOIN users u ON p.author_id = u.id
-        WHERE p.id = ?
-      `).bind(proposalId).first();
-      
-      if (!proposal) {
-        console.error(`Proposal not found: ${proposalId}`);
-        return await fetch(request);
-      }
-      
-      // Generate SVG URL
-      shareImageUrl = `https://${url.hostname}/api/petition-svg?id=${proposalId}`;
-    }
-    
-    console.log(`Found proposal: ${JSON.stringify(proposal)}`);
-    console.log(`Using share image URL: ${shareImageUrl}`);
-    
-    // Get the full URL for this proposal
-    const fullProposalUrl = `https://${url.hostname}/?proposal=${proposalId}`;
-    
-    // Fetch the original HTML
-    const response = await fetch(request);
-    const html = await response.text();
-    
-    // First, remove all existing og:image and twitter:image tags
-    let modifiedHtml = html.replace(/<meta\s+property=["']og:image(:[^"']*)?["'][^>]*>/g, '');
-    modifiedHtml = modifiedHtml.replace(/<meta\s+name=["']twitter:image(:[^"']*)?["'][^>]*>/g, '');
-    modifiedHtml = modifiedHtml.replace(/<meta\s+name=["']twitter:image:src["'][^>]*>/g, '');
-    
-    // Find the head end tag
-    const headEndIndex = modifiedHtml.indexOf('</head>');
-    if (headEndIndex === -1) {
-      console.error("Could not find </head> tag in HTML");
-      return new Response(modifiedHtml, {
-        headers: response.headers
-      });
-    }
-    
-    // Create comprehensive meta tags
-    const customMetaTags = `
-      <!-- RADICAL SOCIAL SHARING META TAGS ${Date.now()} -->
-      <!-- Primary Meta Tags -->
-      <meta name="title" content="RADICAL Petition: ${proposal.text.substring(0, 60)}">
-      <meta name="description" content="${proposal.text.substring(0, 150)}">
-      
-      <!-- Open Graph / Facebook -->
-      <meta property="og:type" content="website">
-      <meta property="og:url" content="${fullProposalUrl}">
-      <meta property="og:title" content="RADICAL Petition: ${proposal.text.substring(0, 60)}">
-      <meta property="og:description" content="${proposal.text.substring(0, 150)}">
-      <meta property="og:image" content="${shareImageUrl}">
-      <meta property="og:image:width" content="1200">
-      <meta property="og:image:height" content="630">
-      <meta property="og:image:alt" content="RADICAL Petition: ${proposal.text.substring(0, 60)}">
-      
-      <!-- Twitter -->
-      <meta name="twitter:card" content="summary_large_image">
-      <meta name="twitter:url" content="${fullProposalUrl}">
-      <meta name="twitter:title" content="RADICAL Petition">
-      <meta name="twitter:description" content="${proposal.text.substring(0, 150)}">
-      <meta name="twitter:image" content="${shareImageUrl}">
-      <meta name="twitter:image:alt" content="RADICAL Petition: ${proposal.text.substring(0, 60)}">
-    `;
-    
-    // Insert our meta tags right before </head>
-    let customizedHtml = modifiedHtml.substring(0, headEndIndex) + customMetaTags + modifiedHtml.substring(headEndIndex);
-    
-    console.log(`===== END serveCustomizedHtml for proposal ${proposalId} =====`);
-    
-    // Return the customized HTML with appropriate headers
-    const originalHeaders = new Headers(response.headers);
-    originalHeaders.set('Cache-Control', 'no-store, max-age=0');
-    originalHeaders.set('X-Custom-Meta', isTestMeta ? 'test' : 'proposal');
-    originalHeaders.set('X-Share-Image-Url', shareImageUrl); // Debug header
-    
-    return new Response(customizedHtml, {
-      headers: originalHeaders
-    });
-  } catch (error) {
-    console.error('Error generating customized HTML:', error);
-    // Fall back to regular page if something goes wrong
-    return await fetch(request);
-  }
-}
-
-
-
 
 // Function to check if a table exists
 async function tableExists(env, tableName) {
@@ -1843,6 +1456,7 @@ async function createProposal(request, env) {
     }, 500);
   }
 }
+
 // Update a proposal (e.g., mark as trending)
 async function updateProposal(id, request, env) {
   try {
@@ -1889,68 +1503,73 @@ async function updateProposal(id, request, env) {
     return createResponse({ 
       error: 'Failed to process proposal update', 
       details: logError(error, { action: 'update_proposal_outer', id }) 
-    }, 500);
+      }, 500);
   }
 }
 
-
-  // to serve audio files from R2
-
-  async function serveMedia(request, env) {
-    const url = new URL(request.url);
-    const path = url.pathname;
-    
-    // Determine if this is a meme or audio file request
-    let key;
-    if (path.startsWith('/memes/')) {
-      key = path.replace('/memes/', '');
-    } else if (path.startsWith('/audio/')) {
-      key = path.replace('/audio/', '');
-    } else {
-      return new Response('Not found', { status: 404 });
-    }
-    
-    // Handle CORS preflight requests
-    if (request.method === 'OPTIONS') {
-      return handleOptions();
-    }
-    
-    try {
-      const object = await env.MEMES_BUCKET.get(key);
-      
-      if (object === null) {
-        return new Response('File not found', { status: 404 });
-      }
-      
-      const headers = new Headers();
-      object.writeHttpMetadata(headers);
-      headers.set('etag', object.httpEtag);
-      headers.set('Cache-Control', 'public, max-age=31536000'); // Cache for a year
-      
-      // Set the appropriate content-type based on file extension
-      if (key.endsWith('.mp3')) {
-        headers.set('Content-Type', 'audio/mpeg');
-      } else if (key.endsWith('.wav')) {
-        headers.set('Content-Type', 'audio/wav');
-      } else if (key.endsWith('.ogg')) {
-        headers.set('Content-Type', 'audio/ogg');
-      }
-      
-      // Add CORS headers
-      Object.keys(corsHeaders).forEach(key => {
-        headers.set(key, corsHeaders[key]);
-      });
-      
-      return new Response(object.body, {
-        headers
-      });
-    } catch (error) {
-      console.error('Error serving media:', error);
-      return new Response('Internal Server Error', { status: 500 });
-    }
-  }
-
+// Handle serving media files (memes and audio)
+async function serveMedia(request, env) {
+  const url = new URL(request.url);
+  const path = url.pathname;
   
+  // Determine if this is a meme or audio file request
+  let key;
+  if (path.startsWith('/memes/')) {
+    key = path.replace('/memes/', '');
+  } else if (path.startsWith('/audio/')) {
+    key = path.replace('/audio/', '');
+  } else {
+    return new Response('Not found', { 
+      status: 404,
+      headers: corsHeaders
+    });
+  }
+  
+  // Handle CORS preflight requests
+  if (request.method === 'OPTIONS') {
+    return handleOptions();
+  }
+  
+  try {
+    const object = await env.MEMES_BUCKET.get(key);
+    
+    if (object === null) {
+      return new Response('File not found', { 
+        status: 404,
+        headers: corsHeaders
+      });
+    }
+    
+    const headers = new Headers();
+    object.writeHttpMetadata(headers);
+    headers.set('etag', object.httpEtag);
+    headers.set('Cache-Control', 'public, max-age=31536000'); // Cache for a year
+    
+    // Set the appropriate content-type based on file extension
+    if (key.endsWith('.mp3')) {
+      headers.set('Content-Type', 'audio/mpeg');
+    } else if (key.endsWith('.wav')) {
+      headers.set('Content-Type', 'audio/wav');
+    } else if (key.endsWith('.ogg')) {
+      headers.set('Content-Type', 'audio/ogg');
+    }
+    
+    // Add CORS headers
+    Object.keys(corsHeaders).forEach(key => {
+      headers.set(key, corsHeaders[key]);
+    });
+    
+    return new Response(object.body, {
+      headers
+    });
+  } catch (error) {
+    console.error('Error serving media:', error);
+    return new Response('Internal Server Error', { 
+      status: 500,
+      headers: corsHeaders
+    });
+  }
+}
 
 // Create or update a vote and handle petition data
 async function createOrUpdateVote(request, env) {
@@ -2368,5 +1987,340 @@ async function createOrGetUser(request, env) {
       error: 'Failed to process user request', 
       details: logError(error, { action: 'user_outer' })
     }, 500);
+  }
+}
+
+async function verifyTemplateImage(env) {
+  try {
+    const key = "petition-template.png";
+    const object = await env.MEMES_BUCKET.get(key);
+    
+    if (object === null) {
+      console.error("❌ Template image not found in R2 bucket!");
+      return false;
+    }
+    
+    console.log("✅ Template image found in R2 bucket");
+    return true;
+  } catch (error) {
+    console.error("Error verifying template image:", error);
+    return false;
+  }
+}
+
+/**
+ * Handle requests for dynamic SVG images for petitions
+ * @param {Request} request - The incoming request
+ * @param {Object} env - Environment bindings
+ * @returns {Response} - SVG response
+ */
+async function servePetitionSVG(request, env) {
+  try {
+    const url = new URL(request.url);
+    const proposalId = url.searchParams.get('id');
+    
+    if (!proposalId) {
+      return new Response('Missing proposal ID', { status: 400 });
+    }
+    
+    console.log(`Generating SVG image for proposal: ${proposalId}`);
+    
+    // Fetch the proposal data from the database
+    const proposal = await env.DB.prepare(`
+      SELECT 
+        p.id, p.text, p.timestamp,
+        u.name as author_name,
+        (SELECT COUNT(*) FROM votes WHERE proposal_id = p.id AND vote_type = 'upvote') as upvotes,
+        (SELECT COUNT(*) FROM votes WHERE proposal_id = p.id AND vote_type = 'downvote') as downvotes
+      FROM proposals p
+      JOIN users u ON p.author_id = u.id
+      WHERE p.id = ?
+    `).bind(proposalId).first();
+    
+    if (!proposal) {
+      return new Response('Proposal not found', { status: 404 });
+    }
+    
+    // Generate the SVG
+    const svgMarkup = generatePetitionSVG(proposal);
+    
+    // Return the SVG with appropriate headers
+    return new Response(svgMarkup, {
+      headers: {
+        'Content-Type': 'image/svg+xml',
+        'Cache-Control': 'public, max-age=360000', // Cache for 1 hour
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (error) {
+    console.error('Error generating petition SVG:', error);
+    return new Response('Internal Server Error', { status: 500 });
+  }
+}
+
+/**
+ * Generates a dynamic SVG for a petition with the given data
+ * @param {Object} proposal - The petition/proposal data
+ * @returns {string} - SVG markup as a string
+ */
+function generatePetitionSVG(proposal) {
+  // Get data with fallbacks
+  const petitionText = proposal.text || "Unknown petition";
+  const upvotes = proposal.upvotes || 0;
+  const downvotes = proposal.downvotes || 0;
+  const netVotes = upvotes - downvotes;
+  const netVotesDisplay = netVotes > 0 ? `+${netVotes}` : netVotes;
+  const netVotesColor = netVotes > 0 ? "#11cc77" : (netVotes < 0 ? "#ff0099" : "#ffffff");
+  const proposalId = proposal.id || "unknown";
+  
+  // Format timestamp
+  const timestamp = new Date(proposal.timestamp || Date.now()).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+  
+  // Base SVG template
+  const svgTemplate = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#000000" />
+  
+  <!-- Border frame with glowing effect -->
+  <rect x="10" y="10" width="1180" height="610" fill="none" stroke="#ff0099" stroke-width="4" rx="0" />
+  <rect x="20" y="20" width="1160" height="590" fill="rgba(0, 0, 0, 0.8)" stroke="#ff0099" stroke-width="1" rx="0" 
+        style="filter: drop-shadow(0 0 10px #ff0099)" />
+  
+  <!-- RADICAL Header -->
+  <text x="600" y="90" font-family="'Roboto Mono', monospace" font-size="72" font-weight="700" text-anchor="middle" 
+        fill="#ff0099" style="text-transform: uppercase;">RADICAL</text>
+  
+  <!-- Tagline -->
+  <rect x="450" y="110" width="300" height="36" fill="#ff0099" />
+  <text x="600" y="135" font-family="'Roboto Mono', monospace" font-size="20" font-weight="600" text-anchor="middle" 
+        fill="#000000" style="text-transform: uppercase;">VIBE, VOTE, VETO</text>
+  
+  <!-- Petition text container -->
+  <rect x="100" y="180" width="1000" height="280" fill="rgba(17, 17, 17, 0.7)" stroke="#333333" stroke-width="1" />
+  
+  <!-- Petition text (dynamically generated) -->
+  ${generateSVGTextLines(petitionText, 120, 220, 960)}
+  
+  <!-- Vote statistics -->
+  <g transform="translate(200, 510)">
+    <!-- Upvotes -->
+    <text x="0" y="0" font-family="'Roboto Mono', monospace" font-size="24" fill="#ff0099">▲</text>
+    <text x="30" y="0" font-family="'Roboto Mono', monospace" font-size="24" fill="#ffffff">${upvotes}</text>
+    
+    <!-- Downvotes -->
+    <text x="120" y="0" font-family="'Roboto Mono', monospace" font-size="24" fill="#ff0099">▼</text>
+    <text x="150" y="0" font-family="'Roboto Mono', monospace" font-size="24" fill="#ffffff">${downvotes}</text>
+    
+    <!-- Net votes -->
+    <text x="240" y="0" font-family="'Roboto Mono', monospace" font-size="24" fill="#ff0099">NET:</text>
+    <text x="300" y="0" font-family="'Roboto Mono', monospace" font-size="24" fill="${netVotesColor}">${netVotesDisplay}</text>
+  </g>
+  
+  <!-- Timestamp and ID -->
+  <text x="600" y="560" font-family="'Roboto Mono', monospace" font-size="18" fill="#aaaaaa" text-anchor="middle">
+    Petition ID: ${proposalId} • Created: ${timestamp}
+  </text>
+  
+  <!-- Radical Logo / Brand (right corner) -->
+  <g transform="translate(940, 460)">
+    <!-- Pink square for the logo -->
+    <rect x="0" y="0" width="120" height="120" fill="#111111" stroke="#ff0099" stroke-width="2" />
+    <text x="60" y="50" font-family="'Roboto Mono', monospace" font-size="16" fill="#ffffff" text-anchor="middle">RADICAL</text>
+    <text x="60" y="75" font-family="'Roboto Mono', monospace" font-size="14" fill="#ff0099" text-anchor="middle">PETITION</text>
+    <text x="60" y="100" font-family="'Roboto Mono', monospace" font-size="12" fill="#aaaaaa" text-anchor="middle">#${proposalId.slice(-6)}</text>
+  </g>
+  
+  <!-- URL -->
+  <text x="600" y="600" font-family="'Roboto Mono', monospace" font-size="20" fill="#ff0099" text-anchor="middle" 
+        style="text-transform: uppercase;">theradicalparty.com</text>
+</svg>`;
+
+  return svgTemplate;
+}
+
+/**
+ * Generates SVG text elements with proper line wrapping
+ * @param {string} text - The text to wrap
+ * @param {number} x - Starting x position
+ * @param {number} y - Starting y position
+ * @param {number} width - Maximum width for text wrapping
+ * @returns {string} - SVG text elements
+ */
+function generateSVGTextLines(text, x, y, width) {
+  // Simple word wrapping algorithm
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = '';
+  
+  // Estimate characters per line based on width and average character width
+  const avgCharWidth = 22; // Rough estimate for font size ~36px
+  const charsPerLine = Math.floor(width / avgCharWidth);
+  
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (testLine.length <= charsPerLine) {
+      currentLine = testLine;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  
+  // Limit to 6 lines to fit in the container
+  const limitedLines = lines.slice(0, 6);
+  if (lines.length > 6) {
+    // Add ellipsis to the last line if truncated
+    limitedLines[5] = limitedLines[5].slice(0, -3) + '...';
+  }
+  
+  // Generate SVG text elements
+  const lineHeight = 46;
+  let svgTextElements = '';
+  
+  limitedLines.forEach((line, index) => {
+    const lineY = y + index * lineHeight;
+    svgTextElements += `<text x="${x}" y="${lineY}" font-family="'Roboto Mono', monospace" font-size="36" fill="#ffffff">${escapeHTML(line)}</text>\n`;
+  });
+  
+  return svgTextElements;
+}
+
+/**
+ * Escapes HTML special characters in a string
+ * @param {string} text - The text to escape
+ * @returns {string} - Escaped text
+ */
+function escapeHTML(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Update the getShareableImageUrl function to use the SVG endpoint
+function getShareableImageUrl(proposal) {
+  // Use the dynamic SVG endpoint with the proposal ID
+  return `https://radical.omar-c29.workers.dev/api/petition-svg?id=${proposal.id}`;
+}
+
+// Update the serveCustomizedHtml function to use the SVG URL for meta tags
+async function serveCustomizedHtml(proposalId, request, env) {
+  console.log(`===== BEGIN serveCustomizedHtml for proposal ${proposalId} =====`);
+  
+  try {
+    const url = new URL(request.url);
+    const isTestMeta = url.searchParams.get('test_meta') === 'true';
+    
+    // Determine which proposal to use
+    let proposal;
+    let shareImageUrl;
+    
+    if (isTestMeta) {
+      // Use test proposal data
+      proposal = {
+        id: 'test_proposal',
+        text: 'This is a test proposal for meta tags',
+        timestamp: Date.now(),
+        author_name: 'Test User'
+      };
+      shareImageUrl = `https://${url.hostname}/api/petition-svg?id=test_proposal`;
+    } else {
+      // Fetch the actual proposal from the database
+      proposal = await env.DB.prepare(`
+        SELECT 
+          p.id, p.text, p.timestamp,
+          u.name as author_name
+        FROM proposals p
+        JOIN users u ON p.author_id = u.id
+        WHERE p.id = ?
+      `).bind(proposalId).first();
+      
+      if (!proposal) {
+        console.error(`Proposal not found: ${proposalId}`);
+        return await fetch(request);
+      }
+      
+      // Generate SVG URL
+      shareImageUrl = `https://${url.hostname}/api/petition-svg?id=${proposalId}`;
+    }
+    
+    console.log(`Found proposal: ${JSON.stringify(proposal)}`);
+    console.log(`Using share image URL: ${shareImageUrl}`);
+    
+    // Get the full URL for this proposal
+    const fullProposalUrl = `https://${url.hostname}/?proposal=${proposalId}`;
+    
+    // Fetch the original HTML
+    const response = await fetch(request);
+    const html = await response.text();
+    
+    // First, remove all existing og:image and twitter:image tags
+    let modifiedHtml = html.replace(/<meta\s+property=["']og:image(:[^"']*)?["'][^>]*>/g, '');
+    modifiedHtml = modifiedHtml.replace(/<meta\s+name=["']twitter:image(:[^"']*)?["'][^>]*>/g, '');
+    modifiedHtml = modifiedHtml.replace(/<meta\s+name=["']twitter:image:src["'][^>]*>/g, '');
+    
+    // Find the head end tag
+    const headEndIndex = modifiedHtml.indexOf('</head>');
+    if (headEndIndex === -1) {
+      console.error("Could not find </head> tag in HTML");
+      return new Response(modifiedHtml, {
+        headers: response.headers
+      });
+    }
+    
+    // Create comprehensive meta tags
+    const customMetaTags = `
+      <!-- RADICAL SOCIAL SHARING META TAGS ${Date.now()} -->
+      <!-- Primary Meta Tags -->
+      <meta name="title" content="RADICAL Petition: ${proposal.text.substring(0, 60)}">
+      <meta name="description" content="${proposal.text.substring(0, 150)}">
+      
+      <!-- Open Graph / Facebook -->
+      <meta property="og:type" content="website">
+      <meta property="og:url" content="${fullProposalUrl}">
+      <meta property="og:title" content="RADICAL Petition: ${proposal.text.substring(0, 60)}">
+      <meta property="og:description" content="${proposal.text.substring(0, 150)}">
+      <meta property="og:image" content="${shareImageUrl}">
+      <meta property="og:image:width" content="1200">
+      <meta property="og:image:height" content="630">
+      <meta property="og:image:alt" content="RADICAL Petition: ${proposal.text.substring(0, 60)}">
+      
+      <!-- Twitter -->
+      <meta name="twitter:card" content="summary_large_image">
+      <meta name="twitter:url" content="${fullProposalUrl}">
+      <meta name="twitter:title" content="RADICAL Petition">
+      <meta name="twitter:description" content="${proposal.text.substring(0, 150)}">
+      <meta name="twitter:image" content="${shareImageUrl}">
+      <meta name="twitter:image:alt" content="RADICAL Petition: ${proposal.text.substring(0, 60)}">
+    `;
+    
+    // Insert our meta tags right before </head>
+    let customizedHtml = modifiedHtml.substring(0, headEndIndex) + customMetaTags + modifiedHtml.substring(headEndIndex);
+    
+    console.log(`===== END serveCustomizedHtml for proposal ${proposalId} =====`);
+    
+    // Return the customized HTML with appropriate headers
+    const originalHeaders = new Headers(response.headers);
+    originalHeaders.set('Cache-Control', 'no-store, max-age=0');
+    originalHeaders.set('X-Custom-Meta', isTestMeta ? 'test' : 'proposal');
+    originalHeaders.set('X-Share-Image-Url', shareImageUrl); // Debug header
+    
+    return new Response(customizedHtml, {
+      headers: originalHeaders
+    });
+  } catch (error) {
+    console.error('Error generating customized HTML:', error);
+    // Fall back to regular page if something goes wrong
+    return await fetch(request);
   }
 }
