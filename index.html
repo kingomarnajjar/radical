@@ -444,7 +444,7 @@ function getMediaURL(path) {
   try {
     console.log("Creating user:", user);
     
-    const data = await fetch(`${API_BASE_URL}/users`, {
+    const data = await safeFetch(`${API_BASE_URL}/users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -561,37 +561,80 @@ function getMediaURL(path) {
             }, 3000);
         }
 
-        async function fetch(url, options = {}) {
+   // Improved fetch implementation
+async function safeFetch(url, options = {}) {
   try {
-    // Add mode: 'cors' explicitly to ensure CORS is respected
-    const response = await fetch(url, {
-      ...options,
+    // Ensure URL is a string
+    const requestUrl = typeof url === 'string' ? url : url.toString();
+    
+    // Default options
+    const defaultOptions = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // Add any additional default headers
+      },
       mode: 'cors',
       credentials: 'same-origin'
+    };
+    
+    // Merge provided options with defaults
+    const fetchOptions = {
+      ...defaultOptions,
+      ...options,
+      headers: {
+        ...defaultOptions.headers,
+        ...(options.headers || {})
+      }
+    };
+    
+    // Log fetch details for debugging
+    console.log('Fetch Request:', {
+      url: requestUrl,
+      method: fetchOptions.method,
+      headers: Object.keys(fetchOptions.headers)
     });
     
+    // Perform fetch with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    fetchOptions.signal = controller.signal;
+    
+    const response = await window.fetch(requestUrl, fetchOptions);
+    
+    clearTimeout(timeoutId);
+    
+    // Check for successful response
     if (!response.ok) {
-      // Try to parse error message from response
-      let errorData;
-      try {
-        errorData = await response.json();
-      } catch (e) {
-        errorData = { error: `HTTP error: ${response.status} ${response.statusText}` };
-      }
+      const errorBody = await response.text();
+      console.error('Fetch Error Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody
+      });
       
-      throw new Error(
-        errorData.error || 
-        errorData.message || 
-        `Request failed with status ${response.status}`
-      );
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorBody}`);
     }
     
     return await response.json();
   } catch (error) {
-    console.error(`Fetch error for ${url}:`, error);
+    console.error('Fetch Error:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    });
+    
+    // Handle specific error types
+    if (error.name === 'AbortError') {
+      throw new Error('Request timed out');
+    }
+    
     throw error;
   }
 }
+        
+
         
         // Fetch proposals from API
         async function fetchProposals() {
@@ -602,7 +645,7 @@ function getMediaURL(path) {
     const sortSelect = document.getElementById('sort-select');
     const sortBy = sortSelect ? sortSelect.value : 'newest';
     
-    const data = await fetch(
+    const data = await safeFetch(
       `${API_BASE_URL}/proposals?sortBy=${sortBy}&userId=${currentUser.id}`
     );
     
@@ -807,7 +850,7 @@ async function submitVoteToServer(proposalId, voteType, isPetition = false, peti
         voteData.petitionDetails = petitionDetails;
     }
     
-    const response = await fetch(`${API_BASE_URL}/votes`, {
+    const response = await safeFetch(`${API_BASE_URL}/votes`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -1164,7 +1207,7 @@ uploadIcon.style.marginRight = '8px';
                             const trending = Math.random() > 0.8; // Randomly mark some as trending
                             
                             // Create the proposal first
-                            const createResponse = await fetch(`${API_BASE_URL}/proposals`, {
+                            const createResponse = await safeFetch(`${API_BASE_URL}/proposals`, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
@@ -1513,7 +1556,7 @@ uploadIcon.style.marginRight = '8px';
       showToastMessage('Loading petition...', '#11cc77');
       
       // Fetch the specific proposal
-      const response = await fetch(`${API_BASE_URL}/proposals?userId=${currentUser.id}`);
+      const response = await safeFetch(`${API_BASE_URL}/proposals?userId=${currentUser.id}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch proposal');
@@ -1808,7 +1851,7 @@ async function loadModalComments(proposalId) {
   
   try {
     // Include the current user ID to get their votes
-    const response = await fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
+    const response = await safeFetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
     
     if (!response.ok) {
       throw new Error('Failed to fetch comments');
@@ -1927,7 +1970,7 @@ async function handleCommentVote(commentId, voteType) {
   
   // Submit vote to server
   try {
-    const response = await fetch(`${API_BASE_URL}/comment-votes`, {
+    const response = await safeFetch(`${API_BASE_URL}/comment-votes`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1985,7 +2028,7 @@ async function loadComments(proposalId) {
   
   try {
     // Include the current user ID to get their votes
-    const response = await fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
+    const response = await safeFetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
     
     if (!response.ok) {
       throw new Error('Failed to fetch comments');
@@ -2075,7 +2118,7 @@ async function submitComment(proposalId, form) {
   submitButton.disabled = true;
   
   try {
-    const response = await fetch(`${API_BASE_URL}/comments`, {
+    const response = await safeFetch(`${API_BASE_URL}/comments`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -2389,7 +2432,7 @@ function updateCommentCount(proposalId) {
   const commentsToggle = document.getElementById(`comments-toggle-${proposalId}`);
   if (!commentsToggle) return;
   
-  fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
+  safeFetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
     .then(response => response.json())
     .then(comments => {
       const commentCount = comments.length;
@@ -2407,7 +2450,7 @@ function loadComments(proposalId) {
   
   commentsList.innerHTML = '<div class="comments-loading">Loading comments...</div>';
   
-  fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
+  safeFetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
     .then(response => response.json())
     .then(comments => {
       if (comments.length === 0) {
@@ -2436,7 +2479,7 @@ function loadComments(proposalId) {
 
 // Update submitComment function to handle promises
 function submitComment(proposalId, commentText) {
-  return fetch(`${API_BASE_URL}/comments`, {
+  return safeFetch(`${API_BASE_URL}/comments`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
