@@ -417,34 +417,27 @@ function smartCopyShare(proposalId, proposalText) {
         
         // Create or get user in DB
         async function createUser(user) {
-            try {
-                console.log("Creating user:", user); // Log the user data
-                
-                const response = await fetch(`${API_BASE_URL}/users`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        id: user.id,
-                        name: user.name
-                    })
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error("User creation API error:", errorData);
-                    throw new Error('Failed to create user');
-                }
-                
-                const data = await response.json();
-                console.log("User creation successful:", data);
-                return data;
-            } catch (error) {
-                console.error('Error creating user:', error);
-                throw error;
-            }
-        }
+  try {
+    console.log("Creating user:", user);
+    
+    const data = await fetchWithErrorHandling(`${API_BASE_URL}/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id: user.id,
+        name: user.name
+      })
+    });
+    
+    console.log("User creation successful:", data);
+    return data;
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error;
+  }
+}
         
         // Animation for successful post
         function animatePostSuccess() {
@@ -543,28 +536,58 @@ function smartCopyShare(proposalId, proposalText) {
                 }, 500);
             }, 3000);
         }
+
+        async function fetchWithErrorHandling(url, options = {}) {
+  try {
+    // Add mode: 'cors' explicitly to ensure CORS is respected
+    const response = await fetch(url, {
+      ...options,
+      mode: 'cors',
+      credentials: 'same-origin'
+    });
+    
+    if (!response.ok) {
+      // Try to parse error message from response
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { error: `HTTP error: ${response.status} ${response.statusText}` };
+      }
+      
+      throw new Error(
+        errorData.error || 
+        errorData.message || 
+        `Request failed with status ${response.status}`
+      );
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(`Fetch error for ${url}:`, error);
+    throw error;
+  }
+}
         
         // Fetch proposals from API
         async function fetchProposals() {
-            try {
-                // Show loading indicator
-                showLoadingIndicator();
-                
-                const sortSelect = document.getElementById('sort-select');
-                const sortBy = sortSelect ? sortSelect.value : 'newest';
-                const response = await fetch(`${API_BASE_URL}/proposals?sortBy=${sortBy}&userId=${currentUser.id}`);
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch proposals');
-                }
-                
-                const proposals = await response.json();
-                renderProposals(proposals);
-            } catch (error) {
-                console.error('Error fetching proposals:', error);
-                showErrorMessage('Oops! Failed to load petitions. Parliament might be censoring us already!');
-            }
-        }
+  try {
+    // Show loading indicator
+    showLoadingIndicator();
+    
+    const sortSelect = document.getElementById('sort-select');
+    const sortBy = sortSelect ? sortSelect.value : 'newest';
+    
+    const data = await fetchWithErrorHandling(
+      `${API_BASE_URL}/proposals?sortBy=${sortBy}&userId=${currentUser.id}`
+    );
+    
+    renderProposals(data);
+  } catch (error) {
+    console.error('Error fetching proposals:', error);
+    showErrorMessage('Oops! Failed to load petitions. Try refreshing the page.');
+  }
+}
         
         // Handle voting
 async function handleVote(proposalId, voteType) {
@@ -760,7 +783,7 @@ async function submitVoteToServer(proposalId, voteType, isPetition = false, peti
         voteData.petitionDetails = petitionDetails;
     }
     
-    const response = await fetch(`${API_BASE_URL}/votes`, {
+    const response = await fetchWithErrorHandling(`${API_BASE_URL}/votes`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -1117,7 +1140,7 @@ uploadIcon.style.marginRight = '8px';
                             const trending = Math.random() > 0.8; // Randomly mark some as trending
                             
                             // Create the proposal first
-                            const createResponse = await fetch(`${API_BASE_URL}/proposals`, {
+                            const createResponse = await fetchWithErrorHandling(`${API_BASE_URL}/proposals`, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
@@ -1466,7 +1489,7 @@ uploadIcon.style.marginRight = '8px';
       showToastMessage('Loading petition...', '#11cc77');
       
       // Fetch the specific proposal
-      const response = await fetch(`${API_BASE_URL}/proposals?userId=${currentUser.id}`);
+      const response = await fetchWithErrorHandling(`${API_BASE_URL}/proposals?userId=${currentUser.id}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch proposal');
@@ -1761,7 +1784,7 @@ async function loadModalComments(proposalId) {
   
   try {
     // Include the current user ID to get their votes
-    const response = await fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
+    const response = await fetchWithErrorHandling(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
     
     if (!response.ok) {
       throw new Error('Failed to fetch comments');
@@ -1880,7 +1903,7 @@ async function handleCommentVote(commentId, voteType) {
   
   // Submit vote to server
   try {
-    const response = await fetch(`${API_BASE_URL}/comment-votes`, {
+    const response = await fetchWithErrorHandling(`${API_BASE_URL}/comment-votes`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1938,7 +1961,7 @@ async function loadComments(proposalId) {
   
   try {
     // Include the current user ID to get their votes
-    const response = await fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
+    const response = await fetchWithErrorHandling(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
     
     if (!response.ok) {
       throw new Error('Failed to fetch comments');
@@ -2028,7 +2051,7 @@ async function submitComment(proposalId, form) {
   submitButton.disabled = true;
   
   try {
-    const response = await fetch(`${API_BASE_URL}/comments`, {
+    const response = await fetchWithErrorHandling(`${API_BASE_URL}/comments`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -2342,7 +2365,7 @@ function updateCommentCount(proposalId) {
   const commentsToggle = document.getElementById(`comments-toggle-${proposalId}`);
   if (!commentsToggle) return;
   
-  fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
+  fetchWithErrorHandling(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
     .then(response => response.json())
     .then(comments => {
       const commentCount = comments.length;
@@ -2360,7 +2383,7 @@ function loadComments(proposalId) {
   
   commentsList.innerHTML = '<div class="comments-loading">Loading comments...</div>';
   
-  fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
+  fetchWithErrorHandling(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
     .then(response => response.json())
     .then(comments => {
       if (comments.length === 0) {
@@ -2389,7 +2412,7 @@ function loadComments(proposalId) {
 
 // Update submitComment function to handle promises
 function submitComment(proposalId, commentText) {
-  return fetch(`${API_BASE_URL}/comments`, {
+  return fetchWithErrorHandling(`${API_BASE_URL}/comments`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

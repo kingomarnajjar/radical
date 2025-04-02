@@ -1,3 +1,38 @@
+// Define CORS headers - These need to be applied to *all* responses
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Max-Age': '86400', // 24 hours
+};
+
+// Handle OPTIONS request for CORS preflight
+function handleOptions() {
+  return new Response(null, {
+    headers: corsHeaders
+  });
+}
+
+// Helper to create standardized responses with CORS headers
+function createResponse(body, status = 200, cacheDuration = 60*60*24) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...corsHeaders // Make sure CORS headers are added to every response
+  };
+  
+  if (cacheDuration > 0) {
+    headers['Cache-Control'] = `public, max-age=${cacheDuration}`;
+    headers['CDN-Cache-Control'] = `public, max-age=${cacheDuration}`;
+  } else {
+    headers['Cache-Control'] = 'no-store';
+  }
+  
+  return new Response(JSON.stringify(body), {
+    status,
+    headers
+  });
+}
+
 export default {
   async fetch(request, env, ctx) {
     try {
@@ -13,7 +48,10 @@ export default {
       // Check if the hostname is valid
       if (!validHostnames.includes(url.hostname)) {
         console.error(`Unexpected hostname: ${url.hostname}`);
-        return new Response('Invalid hostname', { status: 400 });
+        return new Response('Invalid hostname', { 
+          status: 400,
+          headers: corsHeaders // Add CORS headers even to error responses
+        });
       }
 
       const path = url.pathname;
@@ -22,16 +60,10 @@ export default {
       console.log(`Processing request: ${url.toString()}`);
       console.log(`User-Agent: ${request.headers.get('User-Agent')}`);
 
-      // Handle CORS preflight requests first
+      // Handle CORS preflight requests first - this is critical
       if (request.method === 'OPTIONS') {
         return handleOptions();
       }
-
-      //  // Check if this is an API request (starts with /api/)
-      //  if (!path.startsWith('/api/')) {
-      //   // For non-API routes, pass through to Cloudflare Pages
-      //   return fetch(request);
-      // }
 
       // For GET requests, try to serve from cache first
       if (request.method === "GET") {
@@ -69,7 +101,10 @@ export default {
           
           if (!response.ok) {
             console.error('Failed to fetch styles.css', response.status, response.statusText);
-            return new Response('CSS File Not Found', { status: 404 });
+            return new Response('CSS File Not Found', { 
+              status: 404,
+              headers: corsHeaders // Add CORS headers
+            });
           }
           
           // Get the CSS content
@@ -96,7 +131,10 @@ export default {
           return cssResponse;
         } catch (error) {
           console.error('Error fetching styles.css:', error);
-          return new Response('Internal Server Error', { status: 500 });
+          return new Response('Internal Server Error', { 
+            status: 500,
+            headers: corsHeaders // Add CORS headers
+          });
         }
       }
 
@@ -252,22 +290,36 @@ export default {
         }
       }
       
-      return response;
-      
-    } catch (error) {
-      console.error('Critical error in request handling:', error);
-      return new Response(JSON.stringify({
-        error: 'Internal Server Error',
-        details: error.message
-      }), { 
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders // Add CORS headers to error responses too
-        }
-      });
-    }
+    // If no other handler catches the request, return a 404
+    return createResponse({ 
+      error: 'Not found', 
+      path,
+      method: request.method,
+      availableRoutes: [
+        { path: '/api/health', method: 'GET', description: 'Check system health' },
+        { path: '/api/proposals', method: 'GET', description: 'Get proposals' },
+        { path: '/api/proposals/:id', method: 'GET', description: 'Get a single proposal by ID' },
+        { path: '/api/proposals/:id', method: 'PUT', description: 'Update proposal' },
+        { path: '/api/votes', method: 'POST', description: 'Create/update vote' },
+        { path: '/api/users', method: 'POST', description: 'Create/get user' },
+        { path: '/api/petition-stats', method: 'GET', description: 'Get petition statistics' }
+      ]
+    }, 404);
+    
+  } catch (error) {
+    console.error('Critical error in request handling:', error);
+    return new Response(JSON.stringify({
+      error: 'Internal Server Error',
+      details: error.message
+    }), { 
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders // Add CORS headers to error responses too
+      }
+    });
   }
+}
 };
 
 

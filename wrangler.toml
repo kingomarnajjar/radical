@@ -17,7 +17,11 @@ bucket_name = "memes"
 [vars]
 ENVIRONMENT = "production"
 
-# Routes (if using workers.dev)
+# Routes - Ensure ALL routes are properly configured
 [[routes]]
 pattern = "theradicalparty.com/api/*"
 zone_name = "theradicalparty.com"
+
+[[routes]]
+pattern = "radical.omar-c29.workers.dev/*"
+zone_name = "radical.omar-c29.workers.dev"
