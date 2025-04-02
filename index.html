@@ -420,7 +420,7 @@ function smartCopyShare(proposalId, proposalText) {
   try {
     console.log("Creating user:", user);
     
-    const data = await fetchWithErrorHandling(`${API_BASE_URL}/users`, {
+    const data = await fetch(`${API_BASE_URL}/users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -537,7 +537,7 @@ function smartCopyShare(proposalId, proposalText) {
             }, 3000);
         }
 
-        async function fetchWithErrorHandling(url, options = {}) {
+        async function fetch(url, options = {}) {
   try {
     // Add mode: 'cors' explicitly to ensure CORS is respected
     const response = await fetch(url, {
@@ -578,7 +578,7 @@ function smartCopyShare(proposalId, proposalText) {
     const sortSelect = document.getElementById('sort-select');
     const sortBy = sortSelect ? sortSelect.value : 'newest';
     
-    const data = await fetchWithErrorHandling(
+    const data = await fetch(
       `${API_BASE_URL}/proposals?sortBy=${sortBy}&userId=${currentUser.id}`
     );
     
@@ -783,7 +783,7 @@ async function submitVoteToServer(proposalId, voteType, isPetition = false, peti
         voteData.petitionDetails = petitionDetails;
     }
     
-    const response = await fetchWithErrorHandling(`${API_BASE_URL}/votes`, {
+    const response = await fetch(`${API_BASE_URL}/votes`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -1140,7 +1140,7 @@ uploadIcon.style.marginRight = '8px';
                             const trending = Math.random() > 0.8; // Randomly mark some as trending
                             
                             // Create the proposal first
-                            const createResponse = await fetchWithErrorHandling(`${API_BASE_URL}/proposals`, {
+                            const createResponse = await fetch(`${API_BASE_URL}/proposals`, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
@@ -1489,7 +1489,7 @@ uploadIcon.style.marginRight = '8px';
       showToastMessage('Loading petition...', '#11cc77');
       
       // Fetch the specific proposal
-      const response = await fetchWithErrorHandling(`${API_BASE_URL}/proposals?userId=${currentUser.id}`);
+      const response = await fetch(`${API_BASE_URL}/proposals?userId=${currentUser.id}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch proposal');
@@ -1784,7 +1784,7 @@ async function loadModalComments(proposalId) {
   
   try {
     // Include the current user ID to get their votes
-    const response = await fetchWithErrorHandling(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
+    const response = await fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
     
     if (!response.ok) {
       throw new Error('Failed to fetch comments');
@@ -1903,7 +1903,7 @@ async function handleCommentVote(commentId, voteType) {
   
   // Submit vote to server
   try {
-    const response = await fetchWithErrorHandling(`${API_BASE_URL}/comment-votes`, {
+    const response = await fetch(`${API_BASE_URL}/comment-votes`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1961,7 +1961,7 @@ async function loadComments(proposalId) {
   
   try {
     // Include the current user ID to get their votes
-    const response = await fetchWithErrorHandling(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
+    const response = await fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
     
     if (!response.ok) {
       throw new Error('Failed to fetch comments');
@@ -2051,7 +2051,7 @@ async function submitComment(proposalId, form) {
   submitButton.disabled = true;
   
   try {
-    const response = await fetchWithErrorHandling(`${API_BASE_URL}/comments`, {
+    const response = await fetch(`${API_BASE_URL}/comments`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -2365,7 +2365,7 @@ function updateCommentCount(proposalId) {
   const commentsToggle = document.getElementById(`comments-toggle-${proposalId}`);
   if (!commentsToggle) return;
   
-  fetchWithErrorHandling(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
+  fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
     .then(response => response.json())
     .then(comments => {
       const commentCount = comments.length;
@@ -2383,7 +2383,7 @@ function loadComments(proposalId) {
   
   commentsList.innerHTML = '<div class="comments-loading">Loading comments...</div>';
   
-  fetchWithErrorHandling(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
+  fetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
     .then(response => response.json())
     .then(comments => {
       if (comments.length === 0) {
@@ -2412,7 +2412,7 @@ function loadComments(proposalId) {
 
 // Update submitComment function to handle promises
 function submitComment(proposalId, commentText) {
-  return fetchWithErrorHandling(`${API_BASE_URL}/comments`, {
+  return fetch(`${API_BASE_URL}/comments`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
