@@ -1535,61 +1535,90 @@ async function serveMedia(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
   
-  // Determine if this is a meme or audio file request
-  let key;
-  if (path.startsWith('/memes/')) {
-    key = path.replace('/memes/', '');
-  } else if (path.startsWith('/audio/')) {
-    key = path.replace('/audio/', '');
-  } else {
-    return new Response('Not found', { 
+  console.log('Media Request Details:', {
+    fullPath: path,
+    hostname: url.hostname,
+    method: request.method
+  });
+
+  // More explicit route matching
+  const audioRoutes = ['/audio/', '/memes/'];
+  const mediaRoute = audioRoutes.find(route => path.startsWith(route));
+
+  if (!mediaRoute) {
+    console.log('No matching media route found');
+    return new Response('Not Found', { 
       status: 404,
-      headers: corsHeaders
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/plain'
+      }
     });
   }
+
+  const key = path.replace(mediaRoute, '');
   
-  // Handle CORS preflight requests
-  if (request.method === 'OPTIONS') {
-    return handleOptions();
-  }
-  
+  console.log('Attempting to serve media:', {
+    bucket: 'MEMES_BUCKET',
+    key: key
+  });
+
   try {
+    // Try to get the object from R2
     const object = await env.MEMES_BUCKET.get(key);
     
     if (object === null) {
-      return new Response('File not found', { 
+      console.log(`File not found in bucket: ${key}`);
+      return new Response('File Not Found', { 
         status: 404,
-        headers: corsHeaders
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/plain'
+        }
       });
     }
     
     const headers = new Headers();
-    object.writeHttpMetadata(headers);
+    
+    // Determine content type based on file extension
+    const contentTypeMap = {
+      '.mp3': 'audio/mpeg',
+      '.wav': 'audio/wav',
+      '.ogg': 'audio/ogg',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif'
+    };
+
+    const ext = key.slice(key.lastIndexOf('.'));
+    const contentType = contentTypeMap[ext] || 'application/octet-stream';
+
+    headers.set('Content-Type', contentType);
     headers.set('etag', object.httpEtag);
     headers.set('Cache-Control', 'public, max-age=31536000'); // Cache for a year
     
-    // Set the appropriate content-type based on file extension
-    if (key.endsWith('.mp3')) {
-      headers.set('Content-Type', 'audio/mpeg');
-    } else if (key.endsWith('.wav')) {
-      headers.set('Content-Type', 'audio/wav');
-    } else if (key.endsWith('.ogg')) {
-      headers.set('Content-Type', 'audio/ogg');
-    }
-    
     // Add CORS headers
-    Object.keys(corsHeaders).forEach(key => {
-      headers.set(key, corsHeaders[key]);
+    Object.keys(corsHeaders).forEach(corsKey => {
+      headers.set(corsKey, corsHeaders[corsKey]);
     });
     
-    return new Response(object.body, {
-      headers
-    });
+    console.log('Serving media with headers:', Object.fromEntries(headers));
+
+    return new Response(object.body, { headers });
   } catch (error) {
-    console.error('Error serving media:', error);
+    console.error('Critical error serving media:', {
+      message: error.message,
+      stack: error.stack,
+      key: key
+    });
+
     return new Response('Internal Server Error', { 
       status: 500,
-      headers: corsHeaders
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/plain'
+      }
     });
   }
 }
