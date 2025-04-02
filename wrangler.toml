@@ -17,4 +17,15 @@ bucket_name = "memes"
 [vars]
 ENVIRONMENT = "production"
 
+# wrangler.toml (wrangler v3.88.0^)
+[observability.logs]
+enabled = true
+
+
+# Route API requests to your worker
+[[routes]]
+pattern = "theradicalparty.com/api/*"
+zone_name = "theradicalparty.com"
+
+
 
