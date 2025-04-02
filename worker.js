@@ -892,7 +892,7 @@ async function uploadMeme(request, env) {
     });
     
     // Generate the public URL
-    const memeUrl = `https://radical.omar-c29.workers.dev/memes/${uniqueFilename}`;
+    const memeUrl = `https://theradicalparty.com/memes/${uniqueFilename}`;
     
     // Helper function to fix broken meme URLs
     function fixMemeUrl(url) {
@@ -901,7 +901,7 @@ async function uploadMeme(request, env) {
         // Extract the filename from the URL
         const filename = url.split('/').pop();
         // Replace with the correct domain
-        return `https://radical.omar-c29.workers.dev/memes/${filename}`;
+        return `https://theradicalparty.com/memes/${filename}`;
       }
       return url;
     }
@@ -1330,7 +1330,7 @@ async function generateAndStoreShareImage(proposal, env) {
     const params = `b_black,w_1200,h_630,c_fill/l_text:Arial_32_bold:${encodedText},co_white,w_1000,c_fit,g_center`;
     
     // Template image URL
-    const templateUrl = encodeURIComponent("https://radical.omar-c29.workers.dev/memes/petition-template.png");
+    const templateUrl = encodeURIComponent("https://theradicalparty.com/memes/petition-template.png");
     
     // Create a unique identifier for this image
     const imageId = `share_${proposal.id}_${Date.now()}`;
@@ -1358,7 +1358,7 @@ async function generateAndStoreShareImage(proposal, env) {
     });
     
     // Generate the public URL for the stored image
-    const shareImageUrl = `https://radical.omar-c29.workers.dev/memes/${imageId}`;
+    const shareImageUrl = `https://theradicalparty.com/memes/${imageId}`;
     
     console.log(`Stored share image at: ${shareImageUrl}`);
     
@@ -1373,7 +1373,7 @@ async function generateAndStoreShareImage(proposal, env) {
   } catch (error) {
     console.error('Error generating share image:', error);
     // Return a fallback image URL in case of failure
-    return "https://radical.omar-c29.workers.dev/memes/mickeymeta.PNG";
+    return "https://theradicalparty.com/memes/mickeymeta.PNG";
   }
 }
 
@@ -2210,7 +2210,7 @@ function escapeHTML(text) {
 // Update the getShareableImageUrl function to use the SVG endpoint
 function getShareableImageUrl(proposal) {
   // Use the dynamic SVG endpoint with the proposal ID
-  return `https://radical.omar-c29.workers.dev/api/petition-svg?id=${proposal.id}`;
+  return `https://theradicalparty.com/api//petition-svg?id=${proposal.id}`;
 }
 
 // Update the serveCustomizedHtml function to use the SVG URL for meta tags
