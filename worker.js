@@ -86,53 +86,76 @@ export default {
       }
 
       // Handle styles.css route
-      if (path === '/styles.css') {
-        try {
-          // Fetch CSS from GitHub Pages
-          const response = await fetch('https://radical.pages.dev/radical/styles.css', {
-            headers: {
-              'User-Agent': request.headers.get('User-Agent') || 'Cloudflare Worker'
-            }
-          });
-          
-          if (!response.ok) {
-            console.error('Failed to fetch styles.css', response.status, response.statusText);
-            return new Response('CSS File Not Found', { 
-              status: 404,
-              headers: corsHeaders
-            });
-          }
-          
-          // Get the CSS content
-          const cssContent = await response.text();
-          
-          // Return CSS response with caching headers
-          const cssResponse = new Response(cssContent, {
-            status: 200,
-            headers: {
-              'Content-Type': 'text/css',
-              'Cache-Control': 'public, max-age=86400', // 1 day
-              ...corsHeaders // Add CORS headers
-            }
-          });
+if (path === '/styles.css') {
+  try {
+    // Determine the correct source based on the request's origin
+    const cssSourceUrl = 
+      request.headers.get('Origin')?.includes('localhost') 
+        ? 'http://localhost:3000/styles.css'
+        : 'https://radical.pages.dev/radical/styles.css';
 
-          // Store in cache if this is a GET request
-          if (request.method === "GET") {
-            const cacheKey = new Request(request.url, {
-              headers: request.headers
-            });
-            ctx.waitUntil(caches.default.put(cacheKey, cssResponse.clone()));
-          }
-          
-          return cssResponse;
-        } catch (error) {
-          console.error('Error fetching styles.css:', error);
-          return new Response('Internal Server Error', { 
-            status: 500,
-            headers: corsHeaders
-          });
-        }
+    // Fetch CSS 
+    const response = await fetch(cssSourceUrl, {
+      headers: {
+        'User-Agent': request.headers.get('User-Agent') || 'Cloudflare Worker'
       }
+    });
+    
+    if (!response.ok) {
+      console.error('Failed to fetch styles.css', response.status, response.statusText);
+      return new Response('CSS File Not Found', { 
+        status: 404,
+        headers: {
+          'Content-Type': 'text/css',
+          ...corsHeaders
+        }
+      });
+    }
+    
+    // Get the CSS content
+    const cssContent = await response.text();
+    
+    // Prepare CORS headers specific to the requesting origin
+    const requestOrigin = request.headers.get('Origin') || '*';
+    const specificCorsHeaders = {
+      'Content-Type': 'text/css',
+      'Access-Control-Allow-Origin': requestOrigin,
+      'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Max-Age': '86400',
+      'Cache-Control': 'public, max-age=86400' // 1 day cache
+    };
+    
+    // Create CSS response with precise headers
+    const cssResponse = new Response(cssContent, {
+      status: 200,
+      headers: specificCorsHeaders
+    });
+
+    // Store in cache if this is a GET request
+    if (request.method === "GET") {
+      const cacheKey = new Request(request.url, {
+        headers: request.headers
+      });
+      ctx.waitUntil(caches.default.put(cacheKey, cssResponse.clone()));
+    }
+    
+    return cssResponse;
+  } catch (error) {
+    console.error('Comprehensive styles.css fetch error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+
+    return new Response('Failed to load stylesheet', { 
+      status: 500,
+      headers: {
+        'Content-Type': 'text/css',
+        ...corsHeaders
+      }
+    });
+  }
+}
 
       const isTestMeta = url.searchParams.get('test_meta') === 'true';
 

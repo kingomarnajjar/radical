@@ -266,8 +266,11 @@ function smartCopyShare(proposalId, proposalText) {
   }
 }
         // Configuration
-        const API_BASE_URL = 'https://theradicalparty.com/api'; // Replace with your actual worker URL
-        
+        const API_BASE_URL = 
+  window.location.hostname === 'localhost' 
+    ? 'http://localhost:8787/api' 
+    : 'https://theradicalparty.com/api';
+            
         // Character limit
         const CHAR_LIMIT = 280;
         
