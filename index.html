@@ -1311,16 +1311,34 @@ uploadIcon.style.marginRight = '8px';
     console.log("Create response headers:", Object.fromEntries(createResponse.headers.entries()));
     
     if (!createResponse.ok) {
-      const errorText = await createResponse.text();
-      console.error("Error response:", errorText);
-      throw new Error(`Failed to create proposal: ${createResponse.status} ${errorText}`);
+      let errorData;
+      try {
+        errorData = await createResponse.json();
+        console.error("Error response JSON:", errorData);
+      } catch (parseError) {
+        const errorText = await createResponse.text();
+        console.error("Error response text:", errorText);
+        errorData = { error: errorText || 'Unknown error' };
+      }
+      throw new Error(`Failed to create proposal: ${errorData.error || createResponse.statusText}`);
     }
     
-    const proposalResult = await createResponse.json();
-    console.log("Proposal created successfully:", proposalResult);
+    let proposalResult;
+    try {
+      proposalResult = await createResponse.json();
+      console.log("Proposal created successfully:", proposalResult);
+    } catch (jsonError) {
+      console.error("Error parsing success response:", jsonError);
+      throw new Error("Server returned invalid response format");
+    }
     
     // Get the proposal ID from the result
     const proposalId = proposalResult.id;
+    
+    if (!proposalId) {
+      console.error("Missing proposal ID in response:", proposalResult);
+      throw new Error("Server returned incomplete response");
+    }
     
     // If there's a meme, upload it
     if (selectedMeme) {

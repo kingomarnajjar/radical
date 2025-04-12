@@ -1162,85 +1162,101 @@ async function getProposalById(request, env) {
 
 async function generateAndStoreShareImage(proposal, env) {
   try {
+    // Check if we have the necessary bindings
+    if (!env.MEMES_BUCKET) {
+      console.error('Missing MEMES_BUCKET binding');
+      return null;
+    }
+    
     // Get base text for the image
     const text = proposal.text || "Unknown petition";
     const authorName = proposal.author_name || "Anonymous";
     
-    // Create Cloudinary URL for transformation
-    const cloudinaryUrl = "https://res.cloudinary.com/dh8apmjya/image/fetch";
+    // Instead of using Cloudinary, let's use our SVG generation which we know works
+    const imageId = `share_${proposal.id}`;
+    const fallbackImageUrl = "https://theradicalparty.com/memes/petition-template.png";
     
-    // Encode text for URL parameters
-    const encodedText = encodeURIComponent(text.substring(0, 80))
-      .replace(/'/g, '%27')
-      .replace(/"/g, '%22');
+    // Create a simple text-based SVG directly
+    const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+      <rect width="1200" height="630" fill="#000000" />
+      <rect x="20" y="20" width="1160" height="590" fill="#111111" stroke="#ff0099" stroke-width="2" />
+      <text x="600" y="100" font-family="Arial, sans-serif" font-size="60" fill="#ff0099" text-anchor="middle">RADICAL</text>
+      <text x="600" y="180" font-family="Arial, sans-serif" font-size="40" fill="#ffffff" text-anchor="middle" width="1000">${text.substring(0, 80)}</text>
+      <text x="600" y="550" font-family="Arial, sans-serif" font-size="24" fill="#aaaaaa" text-anchor="middle">by ${authorName}</text>
+    </svg>`;
     
-    // Create transformation parameters
-    const params = `b_black,w_1200,h_630,c_fill/l_text:Arial_32_bold:${encodedText},co_white,w_1000,c_fit,g_center`;
+    // Convert SVG to a blob
+    const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml' });
     
-    // Template image URL
-    const templateUrl = encodeURIComponent("https://theradicalparty.com/memes/petition-template.png");
-    
-    // Create a unique identifier for this image
-    const imageId = `share_${proposal.id}_${Date.now()}`;
-    
-    // Final Cloudinary URL
-    const cloudinaryImageUrl = `${cloudinaryUrl}/${params}/${templateUrl}`;
-    
-    console.log(`Generating share image: ${cloudinaryImageUrl}`);
-    
-    // Fetch the image from Cloudinary
-    const imageResponse = await fetch(cloudinaryImageUrl);
-    
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch image: ${imageResponse.status}`);
+    // Upload the SVG to R2
+    try {
+      await env.MEMES_BUCKET.put(imageId, svgBlob, {
+        httpMetadata: {
+          contentType: 'image/svg+xml',
+        },
+      });
+      
+      // Generate the public URL for the stored image
+      const shareImageUrl = `https://theradicalparty.com/memes/${imageId}`;
+      console.log(`Created share image at: ${shareImageUrl}`);
+      return shareImageUrl;
+    } catch (uploadError) {
+      console.error('Error uploading share image:', uploadError);
+      return fallbackImageUrl;
     }
-    
-    // Get the image as a blob
-    const imageBlob = await imageResponse.blob();
-    
-    // Upload the image to your R2 bucket
-    await env.MEMES_BUCKET.put(imageId, imageBlob, {
-      httpMetadata: {
-        contentType: 'image/png',
-      },
-    });
-    
-    // Generate the public URL for the stored image
-    const shareImageUrl = `https://theradicalparty.com/memes/${imageId}`;
-    
-    console.log(`Stored share image at: ${shareImageUrl}`);
-    
-    // Update the proposal in the database with the share image URL
-    await env.DB.prepare(`
-      UPDATE proposals
-      SET share_image_url = ?
-      WHERE id = ?
-    `).bind(shareImageUrl, proposal.id).run();
-    
-    return shareImageUrl;
   } catch (error) {
-    console.error('Error generating share image:', error);
+    console.error('Error in share image generation:', error);
     // Return a fallback image URL in case of failure
-    return "https://theradicalparty.com/memes/mickeymeta.PNG";
+    return "https://theradicalparty.com/memes/petition-template.png";
   }
 }
 
 // Create a new proposal
 async function createProposal(request, env) {
   try {
-    const data = await request.json();
+    // Log request details for debugging
+    console.log(`Received proposal creation request at ${Date.now()}`);
+    
+    // Check if DB binding exists
+    if (!env.DB) {
+      console.error('Database binding is missing');
+      return createResponse({ 
+        error: 'Database configuration error', 
+        details: 'Database binding is not available' 
+      }, 500);
+    }
+
+    // Parse request data
+    let data;
+    try {
+      data = await request.json();
+      console.log(`Parsed request data: ${JSON.stringify(data)}`);
+    } catch (parseError) {
+      console.error('Failed to parse request JSON:', parseError);
+      return createResponse({ 
+        error: 'Invalid request format', 
+        details: 'Could not parse JSON body' 
+      }, 400);
+    }
+    
     const { text, authorId, trending = false } = data;
     
-    console.log(`Creating proposal: ${JSON.stringify(data)}`);
-    
+    // Validate required fields
     if (!text || !authorId) {
-      return createResponse({ error: 'Missing required fields', received: { text, authorId } }, 400);
+      console.error('Missing required fields:', { text: !!text, authorId: !!authorId });
+      return createResponse({ 
+        error: 'Missing required fields', 
+        received: { text: text ? 'present' : 'missing', authorId: authorId ? 'present' : 'missing' } 
+      }, 400);
     }
     
     // Check if user exists first
     try {
+      console.log(`Checking if user exists: ${authorId}`);
       const userCheck = await env.DB.prepare(`SELECT id, name FROM users WHERE id = ?`).bind(authorId).first();
+      
       if (!userCheck) {
+        console.error(`User not found: ${authorId}`);
         return createResponse({ 
           error: 'Author does not exist', 
           authorId,
@@ -1248,38 +1264,67 @@ async function createProposal(request, env) {
         }, 400);
       }
       
+      console.log(`User found: ${userCheck.id}, ${userCheck.name}`);
+      
       // Create a temporary proposal object with author name for image generation
+      const id = 'proposal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+      const timestamp = Date.now();
+      
+      console.log(`Generated proposal ID: ${id}`);
+      
+      // Create temporary proposal object
       const tempProposal = {
-        id: 'proposal_' + Date.now(),
+        id: id,
         text: text,
         author_name: userCheck.name
       };
       
-      const id = tempProposal.id;
-      const timestamp = Date.now();
-      
       // Insert the proposal first
+      console.log('Inserting proposal into database');
       const query = `
         INSERT INTO proposals (id, author_id, text, timestamp, trending)
         VALUES (?, ?, ?, ?, ?)
       `;
       
-      await env.DB.prepare(query).bind(id, authorId, text, timestamp, trending ? 1 : 0).run();
+      try {
+        await env.DB.prepare(query)
+          .bind(id, authorId, text, timestamp, trending ? 1 : 0)
+          .run();
+        
+        console.log('Proposal inserted successfully');
+      } catch (insertError) {
+        console.error('Database insertion error:', insertError);
+        return createResponse({ 
+          error: 'Failed to insert proposal into database', 
+          details: logError(insertError, { action: 'insert_proposal' })
+        }, 500);
+      }
       
-      // Generate and store the share image
-      const shareImageUrl = await generateAndStoreShareImage(tempProposal, env);
+      // Generate and store the share image (but don't block on it)
+      console.log('Generating share image');
+      let shareImageUrl = null;
       
-      // Update the proposal with the share image URL
-      if (shareImageUrl) {
-        await env.DB.prepare(`
-          UPDATE proposals
-          SET share_image_url = ?
-          WHERE id = ?
-        `).bind(shareImageUrl, id).run();
+      try {
+        shareImageUrl = await generateAndStoreShareImage(tempProposal, env);
+        console.log(`Generated share image: ${shareImageUrl}`);
+        
+        // Update the proposal with the share image URL if we got one
+        if (shareImageUrl) {
+          console.log('Updating proposal with share image URL');
+          await env.DB.prepare(`
+            UPDATE proposals
+            SET share_image_url = ?
+            WHERE id = ?
+          `).bind(shareImageUrl, id).run();
+        }
+      } catch (imageError) {
+        // Log but don't fail the whole request if image generation fails
+        console.error('Image generation error (non-fatal):', imageError);
       }
       
       console.log(`Successfully created proposal with ID: ${id}`);
       
+      // Return success response with created proposal data
       return createResponse({ 
         id, 
         authorId, 
@@ -1288,16 +1333,15 @@ async function createProposal(request, env) {
         trending,
         shareImageUrl 
       });
-    } catch (dbError) {
+    } catch (userCheckError) {
+      console.error('Error checking user existence:', userCheckError);
       return createResponse({ 
-        error: 'Failed to create proposal in database', 
-        details: logError(dbError, { 
-          action: 'insert_proposal', 
-          proposal: { id, authorId, timestamp, trending } 
-        })
+        error: 'Failed to verify user', 
+        details: logError(userCheckError, { action: 'check_user', authorId })
       }, 500);
     }
   } catch (error) {
+    console.error('Unhandled error in proposal creation:', error);
     return createResponse({ 
       error: 'Failed to process proposal creation', 
       details: logError(error, { action: 'create_proposal_outer' })
