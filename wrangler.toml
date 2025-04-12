@@ -22,9 +22,28 @@ ENVIRONMENT = "production"
 enabled = true
 
 
-# Route API requests to your worker
+# Main routes for API endpoints
 [[routes]]
 pattern = "theradicalparty.com/api/*"
+zone_name = "theradicalparty.com"
+
+# Media file routes
+[[routes]]
+pattern = "theradicalparty.com/memes/*"
+zone_name = "theradicalparty.com"
+
+[[routes]]
+pattern = "theradicalparty.com/audio/*"
+zone_name = "theradicalparty.com"
+
+# Ensure static assets are properly routed
+[[routes]]
+pattern = "theradicalparty.com/styles.css"
+zone_name = "theradicalparty.com"
+
+# Catch-all for other pages
+[[routes]]
+pattern = "theradicalparty.com/*"
 zone_name = "theradicalparty.com"
 
 
