@@ -2,7 +2,7 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
   'Access-Control-Max-Age': '86400'
 };
 
@@ -19,6 +19,13 @@ function handleOptions() {
 
 // Helper to create standardized responses
 function createResponse(body, status = 200, cacheDuration = 60*60*24) {
+  // Don't allow null or undefined body
+  if (body === null || body === undefined) {
+    console.error('createResponse called with null or undefined body');
+    body = { error: 'Empty response body' };
+    status = 500;
+  }
+  
   const headers = {
     'Content-Type': 'application/json',
     ...corsHeaders // Add CORS headers
@@ -30,6 +37,9 @@ function createResponse(body, status = 200, cacheDuration = 60*60*24) {
   } else {
     headers['Cache-Control'] = 'no-store';
   }
+  
+  // Log the response details for debugging
+  console.log(`Creating response: status=${status}, headers=${JSON.stringify(headers)}, body type=${typeof body}`);
   
   // Create a standard Response object
   // This ensures properties like 'ok' are properly set based on status code
@@ -1028,6 +1038,10 @@ async function healthCheck(env) {
 // Get proposals with optional sorting
 async function getProposals(request, env) {
   try {
+    // Define pagination constants locally to ensure they're in scope
+    const DEFAULT_PAGE_SIZE = 20;
+    const MAX_PAGE_SIZE = 100;
+    
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page')) || 1;
     const limit = Math.min(
@@ -1037,7 +1051,7 @@ async function getProposals(request, env) {
     const offset = (page - 1) * limit;
     const sortBy = url.searchParams.get('sortBy') || 'newest';
     
-    console.log(`Getting proposals with sorting: ${sortBy}`);
+    console.log(`Getting proposals with sorting: ${sortBy}, page: ${page}, limit: ${limit}`);
     
     // Define the base query
     let query = `
@@ -1698,29 +1712,69 @@ async function getComments(request, env) {
 
 // Function to create a new comment
 async function createComment(request, env) {
+  console.log("========== BEGIN createComment ==========");
   try {
-    const data = await request.json();
+    // First check if request is properly formed
+    if (!request || !request.body) {
+      console.error("Invalid request object or missing body");
+      return createResponse({
+        error: 'Invalid request',
+        details: 'Request missing required properties'
+      }, 400);
+    }
+    
+    // Attempt to parse JSON data
+    let data;
+    try {
+      data = await request.json();
+      console.log(`Parsed comment request data: ${JSON.stringify(data)}`);
+    } catch (jsonError) {
+      console.error("Failed to parse request JSON:", jsonError);
+      return createResponse({
+        error: 'Invalid JSON in request',
+        details: 'Could not parse request body as JSON'
+      }, 400);
+    }
+    
     const { proposalId, userId, commentText } = data;
     
-    console.log(`Creating comment: ${JSON.stringify(data)}`);
+    console.log(`Creating comment: proposalId=${proposalId}, userId=${userId}, text length=${commentText?.length || 0}`);
     
     if (!proposalId || !userId || !commentText) {
+      console.error("Missing required fields:", {
+        hasProposalId: !!proposalId,
+        hasUserId: !!userId,
+        hasCommentText: !!commentText
+      });
+      
       return createResponse({
         error: 'Missing required fields',
-        received: { proposalId, userId, commentText: commentText ? '[present]' : '[missing]' }
+        received: { 
+          proposalId: proposalId || '[missing]', 
+          userId: userId || '[missing]', 
+          commentText: commentText ? '[present]' : '[missing]' 
+        }
       }, 400);
     }
     
     // Check if proposal exists
     try {
+      console.log(`Checking if proposal exists: ${proposalId}`);
       const proposalCheck = await env.DB.prepare(
         `SELECT id FROM proposals WHERE id = ?`
       ).bind(proposalId).first();
       
       if (!proposalCheck) {
-        return createResponse({ error: 'Proposal does not exist', proposalId }, 404);
+        console.error(`Proposal not found: ${proposalId}`);
+        return createResponse({ 
+          error: 'Proposal does not exist', 
+          proposalId 
+        }, 404);
       }
+      
+      console.log(`Proposal found: ${proposalCheck.id}`);
     } catch (checkError) {
+      console.error("Error checking proposal existence:", checkError);
       return createResponse({
         error: 'Error checking proposal existence',
         details: logError(checkError, { action: 'check_proposal', proposalId })
@@ -1729,24 +1783,37 @@ async function createComment(request, env) {
     
     // Check if user exists
     try {
+      console.log(`Checking if user exists: ${userId}`);
       const userCheck = await env.DB.prepare(
         `SELECT id FROM users WHERE id = ?`
       ).bind(userId).first();
       
       if (!userCheck) {
-        return createResponse({ error: 'User does not exist', userId }, 404);
+        console.error(`User not found: ${userId}`);
+        return createResponse({ 
+          error: 'User does not exist', 
+          userId 
+        }, 404);
       }
+      
+      console.log(`User found: ${userCheck.id}`);
     } catch (userError) {
+      console.error("Error checking user existence:", userError);
       return createResponse({
         error: 'Error checking user existence',
         details: logError(userError, { action: 'check_user', userId })
       }, 500);
     }
     
+    // Generate a unique comment ID
     const id = 'comment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
     const timestamp = Date.now();
     
+    console.log(`Generated comment ID: ${id}`);
+    
+    // Insert the comment into the database
     try {
+      console.log("Inserting comment into database");
       await env.DB.prepare(`
         INSERT INTO comments (id, proposal_id, user_id, comment_text, timestamp)
         VALUES (?, ?, ?, ?, ?)
@@ -1755,19 +1822,32 @@ async function createComment(request, env) {
       console.log(`Successfully created comment with ID: ${id}`);
       
       // Get user name for response
+      console.log("Getting user name for response");
       const userQuery = await env.DB.prepare(
         `SELECT name FROM users WHERE id = ?`
       ).bind(userId).first();
       
-      return createResponse({
+      if (!userQuery || !userQuery.name) {
+        console.warn(`Could not find name for user ${userId}, using 'Anonymous'`);
+      }
+      
+      const responseData = {
         id,
         proposalId,
         userId,
-        userName: userQuery.name,
+        userName: userQuery?.name || 'Anonymous',
         commentText,
-        timestamp
-      });
+        timestamp,
+        upvotes: 0,
+        downvotes: 0
+      };
+      
+      console.log(`Creating successful response: ${JSON.stringify(responseData)}`);
+      console.log("========== END createComment ==========");
+      
+      return createResponse(responseData, 201);  // Use 201 Created for successful creation
     } catch (dbError) {
+      console.error("Database error creating comment:", dbError);
       return createResponse({
         error: 'Failed to create comment in database',
         details: logError(dbError, {
@@ -1777,6 +1857,8 @@ async function createComment(request, env) {
       }, 500);
     }
   } catch (error) {
+    console.error("Unhandled error in createComment:", error);
+    console.log("========== END createComment (with error) ==========");
     return createResponse({
       error: 'Failed to process comment creation',
       details: logError(error, { action: 'create_comment_outer' })

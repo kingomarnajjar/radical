@@ -2293,37 +2293,85 @@ async function submitComment(proposalId, commentText) {
   console.log(`Submitting comment for proposal ${proposalId}: ${commentText.substring(0, 20)}...`);
   
   try {
-    const response = await fetch(`${API_BASE_URL}/comments`, {
+    console.log("Making POST request to comments endpoint");
+    
+    // Log the full API URL and request details
+    const requestUrl = `${API_BASE_URL}/comments`;
+    const requestData = {
+      proposalId: proposalId,
+      userId: currentUser?.id || 'anonymous',
+      commentText: commentText
+    };
+    
+    console.log("Request URL:", requestUrl);
+    console.log("Request data:", requestData);
+    
+    // Ensure we have a user
+    if (!currentUser || !currentUser.id) {
+      console.error("No current user - creating anonymous");
+      showToastMessage('Please wait, initializing user...', '#ff0099');
+      await loadUserData(); // Reinitialize user
+    }
+    
+    // Create a controller to manage request timeouts
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    const response = await fetch(requestUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
         proposalId: proposalId,
         userId: currentUser.id,
         commentText: commentText
-      })
+      }),
+      mode: 'cors',
+      credentials: 'same-origin',
+      signal: controller.signal
     });
     
-    console.log("Comment submission response status:", response.status);
+    clearTimeout(timeoutId);
     
-    if (response.status >= 200 && response.status < 300) {
+    console.log("Comment submission response status:", response.status);
+    console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+    
+    // Process response based on status code
+    if (response.status === 200 || response.status === 201) {
       // Successfully created comment
-      const data = await response.json();
-      console.log("Comment created successfully:", data);
-      
-      loadComments(proposalId);
-      updateCommentCount(proposalId);
-      showToastMessage('Comment posted!', '#11cc77');
-      return data;
+      try {
+        const data = await response.json();
+        console.log("Comment created successfully:", data);
+        
+        loadComments(proposalId);
+        updateCommentCount(proposalId);
+        showToastMessage('Comment posted!', '#11cc77');
+        return data;
+      } catch (jsonError) {
+        console.warn("Could not parse success response as JSON:", jsonError);
+        // Still consider this a success if status code was good
+        loadComments(proposalId);
+        updateCommentCount(proposalId);
+        showToastMessage('Comment posted!', '#11cc77');
+        return { success: true };
+      }
     } else {
       // Server returned an error
       let errorMessage;
       try {
         const errorData = await response.json();
+        console.error("Error response data:", errorData);
         errorMessage = errorData.error || 'Unknown server error';
       } catch (e) {
-        errorMessage = await response.text() || 'Failed to post comment';
+        try {
+          errorMessage = await response.text() || 'Failed to post comment';
+          console.error("Error response text:", errorMessage);
+        } catch (textError) {
+          errorMessage = `HTTP error ${response.status}`;
+          console.error("Could not read error response:", textError);
+        }
       }
       
       console.error('Error posting comment:', errorMessage);
@@ -2331,8 +2379,13 @@ async function submitComment(proposalId, commentText) {
       throw new Error(errorMessage);
     }
   } catch (error) {
-    console.error('Network or processing error:', error);
-    showToastMessage('Failed to post comment', '#ff0099');
+    if (error.name === 'AbortError') {
+      console.error('Comment request timed out');
+      showToastMessage('Comment request timed out', '#ff0099');
+    } else {
+      console.error('Network or processing error:', error);
+      showToastMessage('Failed to post comment', '#ff0099');
+    }
     throw error;
   }
 }
