@@ -108,6 +108,8 @@ export default {
             return await createComment(request, env);
           } else if (path === '/api/votes' && request.method === 'POST') {
             return await createOrUpdateVote(request, env);
+          } else if (path === '/api/users' && request.method === 'POST') {
+            return await createOrGetUser(request, env);
           }
         } catch (error) {
           console.error('API Error:', error);
