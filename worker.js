@@ -110,6 +110,22 @@ export default {
             return await createOrUpdateVote(request, env);
           } else if (path === '/api/users' && request.method === 'POST') {
             return await createOrGetUser(request, env);
+          } else if (path === '/api/memes' && request.method === 'POST') {
+            return await uploadMeme(request, env);
+          } else if (path === '/api/comment-votes' && request.method === 'POST') {
+            return await createOrUpdateCommentVote(request, env);
+          } else if (path === '/api/comment-votes' && request.method === 'GET') {
+            return await getCommentVotes(request, env);
+          } else if (path === '/api/petition-stats' && request.method === 'GET') {
+            return await getPetitionStats(request, env);
+          } else if (path === '/api/petition-svg' && request.method === 'GET') {
+            return await servePetitionSVG(request, env);
+          } else if (path === '/api/health' && request.method === 'GET') {
+            return await healthCheck(env);
+          } else if (path === '/api/debug-meta' && request.method === 'GET') {
+            return await debugMetaTags(request, env);
+          } else if (path.startsWith('/api/proposals/') && request.method === 'GET') {
+            return await getProposalById(request, env);
           }
         } catch (error) {
           console.error('API Error:', error);
