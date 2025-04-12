@@ -209,7 +209,10 @@ async function serveStaticAsset(request, env) {
     headers.set('Cache-Control', 'public, max-age=31536000'); // 1 year cache
     headers.set('Access-Control-Allow-Origin', '*');
     
-    return new Response(asset, {
+    // Get the asset body as text
+    const body = await asset.text();
+    
+    return new Response(body, {
       headers,
       status: 200
     });
