@@ -13,6 +13,11 @@ database_id = "1f2a5273-bfcb-45c8-a759-5d675c05620c"
 binding = "MEMES_BUCKET"
 bucket_name = "memes"
 
+# Static Assets Binding
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "assets"
+
 # Environment variables (optional)
 [vars]
 ENVIRONMENT = "production"
