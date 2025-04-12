@@ -759,6 +759,187 @@ async function safeFetch(url, options = {}) {
   }
 }
         
+        // Function to render all proposals
+        function renderProposals(response) {
+          const proposalsContainer = document.getElementById('proposals-container');
+          proposalsContainer.innerHTML = '';
+          
+          // Clear loading indicator
+          hideLoadingIndicator();
+          
+          // Handle empty or missing data
+          if (!response || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
+            proposalsContainer.innerHTML = `
+              <div class="no-proposals">
+                <h3>No petitions found</h3>
+                <p>Be the first to launch a rebellion!</p>
+              </div>
+            `;
+            return;
+          }
+          
+          // Access the data array from the response
+          const proposals = response.data;
+          
+          // Create and append proposal cards
+          proposals.forEach(proposal => {
+            const proposalCard = createProposalCard(proposal);
+            proposalsContainer.appendChild(proposalCard);
+          });
+          
+          // Activate share buttons
+          initializeShareButtons();
+          
+          // Start CTA cycling for comment buttons
+          startCTACycling();
+        }
+        
+        // Function to create a proposal card from proposal data
+        function createProposalCard(proposal) {
+          const netVotes = proposal.upvotes - proposal.downvotes;
+          const voteClass = netVotes > 0 ? 'positive' : netVotes < 0 ? 'negative' : '';
+          
+          const proposalButton = document.createElement('a');
+          proposalButton.href = getShareableLink(proposal.id);
+          proposalButton.addEventListener('click', e => {
+            e.stopPropagation();
+          });
+
+          const proposalCard = document.createElement('div');
+          proposalCard.className = 'proposal-card';
+          proposalButton.appendChild(proposalCard);
+          
+          // Badge for trending or power proposals
+          const badgeHtml = proposal.trending ? 
+            `<div class="power-badge trending-badge">🔥 Trending</div>` : 
+            (netVotes > 5 ? `<div class="power-badge">💯 Popular</div>` : '');
+          
+          // Add petition signatures info if proposal has upvotes/signatures
+          const petitionInfo = proposal.upvotes > 0 ? 
+            `<div class="petition-info">
+              <span class="petition-icon">✓</span>
+              <span class="petition-count">${proposal.petition_signatures || proposal.upvotes}</span>
+              <span>verified signatures</span>
+            </div>` : '';
+          
+          // Add meme if available
+          const memeHtml = proposal.meme_url ? 
+            `<div class="proposal-meme">
+              <img src="${proposal.meme_url}" alt="Meme for petition" onerror="this.style.display='none'" />
+            </div>` : '';
+          
+          proposalCard.innerHTML = `
+            ${badgeHtml}
+            <div class="proposal-author">${proposal.author_name}</div>
+            <div class="proposal-text">${proposal.text}</div>
+            ${memeHtml}
+            ${petitionInfo}
+            <div class="proposal-stats">
+              <div class="vote-buttons">
+                <button class="vote-button ${proposal.userVote === 'upvote' ? 'upvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="upvote" onclick="event.stopPropagation(); event.preventDefault();">
+                  <span class="vote-icon">▲</span>
+                  <span>${proposal.upvotes || 0}</span>
+                </button>
+                <button class="vote-button ${proposal.userVote === 'downvote' ? 'downvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="downvote" onclick="event.stopPropagation(); event.preventDefault();">
+                  <span class="vote-icon">▼</span>
+                  <span>${proposal.downvotes || 0}</span>
+                </button>
+                <span class="net-votes ${voteClass}">${netVotes > 0 ? '+' : ''}${netVotes}</span>
+                <div class="custom-copy-button" data-id="${proposal.id}" style="display: inline-block; background-color: #000000; border: 0px solid #333333; color: #aaaaaa; padding: 4px 8px; font-size: 20px; position: relative; z-index: 10; cursor: pointer; vertical-align: middle;" onclick="event.stopPropagation(); event.preventDefault(); smartCopyShare('${proposal.id}', '${encodeURIComponent(proposal.text)}');">
+                  <img src="https://theradicalparty.com/memes/share-arrow-icon-md.png" alt="Share" style="width: 20px; height: 14px; filter: brightness(0) invert(1); pointer-events: none;">
+                </div>
+              </div>
+              <div class="proposal-time">${formatDate(proposal.timestamp)}</div>
+            </div>
+            <div class="comments-section">
+              <button class="comments-toggle" id="comments-toggle-${proposal.id}" onclick="event.stopPropagation(); event.preventDefault();">
+                <span class="comments-toggle-icon">▶</span> 0 comments
+              </button>
+              <div class="comments-container" data-proposal-id="${proposal.id}" id="comments-container-${proposal.id}" style="display: none;">
+                <div class="comments-content">
+                  <div class="comments-loading">Loading comments...</div>
+                </div>
+                <div class="comment-form">
+                  <textarea class="comment-input" id="comment-input-${proposal.id}" placeholder="Add your comment..." onclick="event.stopPropagation(); event.preventDefault();"></textarea>
+                  <button class="comment-submit" data-proposal-id="${proposal.id}" onclick="event.stopPropagation(); event.preventDefault();">${getRandomCTA()}</button>
+                </div>
+              </div>
+            </div>
+          `;
+          
+          // Add event listeners for vote buttons
+          const upvoteButton = proposalCard.querySelector('[data-vote-type="upvote"]');
+          const downvoteButton = proposalCard.querySelector('[data-vote-type="downvote"]');
+          
+          if (upvoteButton) {
+            upvoteButton.addEventListener('click', () => {
+              handleVote(proposal.id, 'upvote');
+            });
+          }
+          
+          if (downvoteButton) {
+            downvoteButton.addEventListener('click', () => {
+              handleVote(proposal.id, 'downvote');
+            });
+          }
+          
+          // Add comments toggle functionality
+          const commentsToggle = proposalCard.querySelector(`#comments-toggle-${proposal.id}`);
+          const commentsContainer = proposalCard.querySelector(`#comments-container-${proposal.id}`);
+          
+          if (commentsToggle && commentsContainer) {
+            commentsToggle.addEventListener('click', function() {
+              const isVisible = commentsContainer.style.display !== 'none';
+              
+              if (isVisible) {
+                commentsContainer.style.display = 'none';
+                this.querySelector('.comments-toggle-icon').textContent = '▶';
+              } else {
+                commentsContainer.style.display = 'block';
+                this.querySelector('.comments-toggle-icon').textContent = '▼';
+                loadComments(proposal.id);
+              }
+            });
+          }
+          
+          // Add event listener for comment submission
+          const commentSubmit = proposalCard.querySelector(`.comment-submit[data-proposal-id="${proposal.id}"]`);
+          const commentInput = proposalCard.querySelector(`#comment-input-${proposal.id}`);
+          
+          if (commentSubmit && commentInput) {
+            commentSubmit.addEventListener('click', function() {
+              const commentText = commentInput.value.trim();
+              
+              if (commentText) {
+                // Store original text and disable button while submitting
+                const originalText = this.textContent;
+                this.textContent = "Sending...";
+                this.disabled = true;
+                
+                submitComment(proposal.id, commentText)
+                  .then(() => {
+                    commentInput.value = '';
+                    // Set a new random CTA after submission
+                    this.textContent = getRandomCTA();
+                    this.disabled = false;
+                  })
+                  .catch(() => {
+                    // Restore original CTA if there was an error
+                    this.textContent = originalText;
+                    this.disabled = false;
+                  });
+              }
+            });
+            
+            // Enable/disable comment button based on input
+            commentInput.addEventListener('input', function() {
+              commentSubmit.disabled = this.value.trim() === '';
+            });
+          }
+          
+          return proposalButton;
+        }
+        
         // Handle voting
 async function handleVote(proposalId, voteType) {
     currentProposalId = proposalId;
@@ -1004,164 +1185,10 @@ async function submitVote(proposalId, voteType, isPetition = false, petitionDeta
         }
         
         // Render proposals - FIXED VERSION
-        function renderProposals(proposals) {
-  const proposalsContainer = document.getElementById('proposals-container');
-  if (!proposalsContainer) return;
-  
-  // Clear container
-  proposalsContainer.innerHTML = '';
-  
-  // Show empty state if no proposals
-  if (!proposals || proposals.length === 0) {
-    proposalsContainer.innerHTML = `
-      <div class="empty-state">
-        <p>No petitions yet. Be the first to create one!</p>
-      </div>
-    `;
-    return;
-  }
-  
-  // Render each proposal
-  proposals.forEach(proposal => {
-    const netVotes = proposal.upvotes - proposal.downvotes;
-    const voteClass = netVotes > 0 ? 'positive' : netVotes < 0 ? 'negative' : '';
-    
-    const proposalButton = document.createElement('a');
-    proposalButton.href = getShareableLink(proposal.id);
-
-    proposalButton.addEventListener('click', e => {
-        e.stopPropagation();
-    });
-
-    const proposalCard = document.createElement('div');
-    proposalCard.className = 'proposal-card';
-    proposalButton.appendChild(proposalCard);
-    
-    // Badge for trending or power proposals
-    const badgeHtml = proposal.trending ? 
-      `<div class="power-badge trending-badge">🔥 Trending</div>` : 
-      (netVotes > 5 ? `<div class="power-badge">💯 Popular</div>` : '');
-    
-    // Add petition signatures info if proposal has upvotes/signatures
-    const petitionInfo = proposal.upvotes > 0 ? 
-      `<div class="petition-info">
-        <span class="petition-icon">✓</span>
-        <span class="petition-count">${proposal.petition_signatures || proposal.upvotes}</span>
-        <span>verified signatures</span>
-      </div>` : '';
-    
-    // Add meme if available
-    const memeHtml = proposal.meme_url ? 
-      `<div class="proposal-meme">
-        <img src="${proposal.meme_url}" alt="Meme for petition" onerror="this.style.display='none'" />
-      </div>` : '';
-    
-      proposalCard.innerHTML = `
-  ${badgeHtml}
-  <div class="proposal-author">${proposal.author_name}</div>
-  <div class="proposal-text">${proposal.text}</div>
-  ${memeHtml}
-  ${petitionInfo}
-  <div class="proposal-stats">
-    <div class="vote-buttons">
-      <button class="vote-button ${proposal.userVote === 'upvote' ? 'upvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="upvote" onclick="event.stopPropagation(); event.preventDefault();">
-        <span class="vote-icon">▲</span>
-        <span>${proposal.upvotes || 0}</span>
-      </button>
-      <button class="vote-button ${proposal.userVote === 'downvote' ? 'downvoted' : ''}" data-proposal-id="${proposal.id}" data-vote-type="downvote" onclick="event.stopPropagation(); event.preventDefault();">
-        <span class="vote-icon">▼</span>
-        <span>${proposal.downvotes || 0}</span>
-      </button>
-<span class="net-votes ${voteClass}">${netVotes > 0 ? '+' : ''}${netVotes}</span>
-<div class="custom-copy-button" data-id="${proposal.id}" style="display: inline-block; background-color: #000000; border: 0px solid #333333; color: #aaaaaa; padding: 4px 8px; font-size: 20px; position: relative; z-index: 10; cursor: pointer; vertical-align: middle;" onclick="event.stopPropagation(); event.preventDefault(); smartCopyShare('${proposal.id}', '${encodeURIComponent(proposal.text)}');">
-  <img src="https://theradicalparty.com/memes/share-arrow-icon-md.png" alt="Share" style="width: 20px; height: 14px; filter: brightness(0) invert(1); pointer-events: none;">
-</div>
-    </div>
-    <div class="proposal-time">${formatDate(proposal.timestamp)}</div>
-  </div>
-    <div class="comments-section">
-    <button class="comments-toggle" id="comments-toggle-${proposal.id}" onclick="event.stopPropagation(); event.preventDefault();">
-      <span class="comments-toggle-icon">▶</span> 0 comments
-    </button>
-    <div class="comments-container" id="comments-container-${proposal.id}" style="display: none;">
-      <div class="comments-list" id="comments-list-${proposal.id}"></div>
-      <div class="comment-form">
-        <textarea class="comment-input" id="comment-input-${proposal.id}" placeholder="Add your comment..." onclick="event.stopPropagation(); event.preventDefault();"></textarea>
-<button class="comment-submit" data-proposal-id="${proposal.id}" onclick="event.stopPropagation(); event.preventDefault();">${getRandomCTA()}</button>      </div>
-    </div>
-  </div>
-`;
-    
-    proposalsContainer.appendChild(proposalButton);
-
-    
-   
- // Add comments section to the proposal card - NEW CODE
- addCommentsToProposal(proposalCard, proposal.id);
-    
-    // Add event listeners for vote buttons
-    const upvoteButton = proposalCard.querySelector('[data-vote-type="upvote"]');
-    const downvoteButton = proposalCard.querySelector('[data-vote-type="downvote"]');
-    const shareButton = proposalCard.querySelector('.share-button');
-    
-    if (upvoteButton) {
-      upvoteButton.addEventListener('click', () => {
-        handleVote(proposal.id, 'upvote');
-      });
-    }
-    
-    if (downvoteButton) {
-      downvoteButton.addEventListener('click', () => {
-        handleVote(proposal.id, 'downvote');
-      });
-    }
-    
-    if (shareButton) {
-      shareButton.addEventListener('click', async () => {
-        if ('share' in navigator) await navigator.share({ title: 'What do you think?', text: proposal.text, url: getShareableLink(proposal.id) });
-        else copyToClipboard(getShareableLink(proposal.id));
-      });
-    }
- 
-
-// Add comments toggle functionality
-const commentsToggle = document.getElementById(`comments-toggle-${proposal.id}`);
-const commentsContainer = document.getElementById(`comments-container-${proposal.id}`);
-
-if (commentsToggle && commentsContainer) {
-  commentsToggle.addEventListener('click', function() {
-    const isVisible = commentsContainer.style.display !== 'none';
-    
-    if (isVisible) {
-      commentsContainer.style.display = 'none';
-      this.querySelector('.comments-toggle-icon').textContent = '▶';
-    } else {
-      commentsContainer.style.display = 'block';
-      this.querySelector('.comments-toggle-icon').textContent = '▼';
-      loadComments(proposal.id);
-    }
-  });
-}
-
-// Add event listener for comment submission
-const commentSubmit = document.querySelector(`.comment-submit[data-proposal-id="${proposal.id}"]`);
-if (commentSubmit) {
-  commentSubmit.addEventListener('click', function() {
-    const commentInput = document.getElementById(`comment-input-${proposal.id}`);
-    const commentText = commentInput.value.trim();
-    
-    if (commentText) {
-      submitComment(proposal.id, commentText);
-      commentInput.value = '';
-    }
-  });
-}
-
-// Update comment count
-updateCommentCount(proposal.id);
-
-});
-}
+        // function renderProposals(proposals) {
+  // Removing duplicate implementation
+  // This function has been moved and implemented at line 762
+// }
 
         // Create meme upload elements
         function createMemeUpload() {
@@ -1992,7 +2019,7 @@ if (twitterImageElement) {
   loadModalComments(proposal.id);
 }
 
-// New function specifically for loading comments in the modal
+// Update the loadModalComments function to use the queue
 async function loadModalComments(proposalId) {
   const commentsContent = document.getElementById(`modal-comments-content-${proposalId}`);
   if (!commentsContent) return;
@@ -2000,24 +2027,8 @@ async function loadModalComments(proposalId) {
   // Show loading state
   commentsContent.innerHTML = `<div class="comments-loading">Loading comments...</div>`;
   
-  try {
-    // Include the current user ID to get their votes
-    const response = await safeFetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch comments');
-    }
-    
-    const comments = await response.json();
-    renderModalComments(commentsContent, comments);
-  } catch (error) {
-    console.error('Error fetching comments:', error);
-    commentsContent.innerHTML = `
-      <div class="no-comments">
-        Failed to load comments. Please try again.
-      </div>
-    `;
-  }
+  // Queue the comment load
+  queueCommentLoad(proposalId);
 }
 
 function renderModalComments(container, comments) {
@@ -2172,29 +2183,15 @@ function toggleComments(proposalId, button) {
 // Function to load comments for a proposal
 async function loadComments(proposalId) {
   const commentsContainer = document.querySelector(`.comments-container[data-proposal-id="${proposalId}"]`);
-  const commentsContent = commentsContainer.querySelector('.comments-content');
+  const commentsContent = commentsContainer?.querySelector('.comments-content');
+  
+  if (!commentsContent) return;
   
   // Show loading state
   commentsContent.innerHTML = `<div class="comments-loading">Loading comments...</div>`;
   
-  try {
-    // Include the current user ID to get their votes
-    const response = await safeFetch(`${API_BASE_URL}/comments?proposalId=${proposalId}&userId=${currentUser.id}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch comments');
-    }
-    
-    const comments = await response.json();
-    renderComments(commentsContent, comments);
-  } catch (error) {
-    console.error('Error fetching comments:', error);
-    commentsContent.innerHTML = `
-      <div class="no-comments">
-        Failed to load comments. Please try again.
-      </div>
-    `;
-  }
+  // Queue the comment load
+  queueCommentLoad(proposalId);
 }
 
 // Function to render comments
@@ -2674,37 +2671,18 @@ function updateCommentCount(proposalId) {
     });
 }
 
+// Using the queue-based loadComments function to load comments
 function loadComments(proposalId) {
-  const commentsList = document.getElementById(`comments-list-${proposalId}`);
-  if (!commentsList) return;
+  const commentsContainer = document.querySelector(`.comments-container[data-proposal-id="${proposalId}"]`);
+  const commentsContent = commentsContainer?.querySelector('.comments-content');
   
-  commentsList.innerHTML = '<div class="comments-loading">Loading comments...</div>';
+  if (!commentsContent) return;
   
-  safeFetch(`${API_BASE_URL}/comments?proposalId=${proposalId}`)
-    .then(response => response.json())
-    .then(comments => {
-      if (comments.length === 0) {
-        commentsList.innerHTML = '<div class="no-comments">No comments yet. Be the first to comment!</div>';
-        return;
-      }
-      
-      commentsList.innerHTML = '';
-      comments.forEach(comment => {
-        const commentElement = document.createElement('div');
-        commentElement.className = 'comment';
-        commentElement.innerHTML = `
-          <div class="comment-header">
-            <span class="comment-author">${comment.user_name}</span>
-            <span class="comment-time">${formatDate(comment.timestamp)}</span>
-          </div>
-          <div class="comment-body">${comment.comment_text}</div>
-        `;
-        commentsList.appendChild(commentElement);
-      });
-    })
-    .catch(error => {
-      commentsList.innerHTML = '<div class="comments-error">Failed to load comments.</div>';
-    });
+  // Show loading state
+  commentsContent.innerHTML = `<div class="comments-loading">Loading comments...</div>`;
+  
+  // Queue the comment load
+  queueCommentLoad(proposalId);
 }
 
 // Update submitComment function to handle promises
@@ -2795,32 +2773,6 @@ function queueCommentLoad(proposalId) {
   if (!commentRequestTimeout) {
     commentRequestTimeout = setTimeout(batchLoadComments, COMMENT_REQUEST_DELAY);
   }
-}
-
-// Update the loadComments function to use the queue
-function loadComments(proposalId) {
-  const commentsContainer = document.querySelector(`.comments-container[data-proposal-id="${proposalId}"]`);
-  const commentsContent = commentsContainer?.querySelector('.comments-content');
-  
-  if (!commentsContent) return;
-  
-  // Show loading state
-  commentsContent.innerHTML = `<div class="comments-loading">Loading comments...</div>`;
-  
-  // Queue the comment load
-  queueCommentLoad(proposalId);
-}
-
-// Update the loadModalComments function to use the queue
-async function loadModalComments(proposalId) {
-  const commentsContent = document.getElementById(`modal-comments-content-${proposalId}`);
-  if (!commentsContent) return;
-  
-  // Show loading state
-  commentsContent.innerHTML = `<div class="comments-loading">Loading comments...</div>`;
-  
-  // Queue the comment load
-  queueCommentLoad(proposalId);
 }
 
         </script>
