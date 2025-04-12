@@ -1326,7 +1326,7 @@ uploadIcon.style.marginRight = '8px';
           // Refresh proposals
           fetchProposals();
         } else {
-          // Upload failed
+          // Upload failed 
           memeUpload.progress.style.display = 'none';
           console.error('Meme upload failed:', xhr.responseText);
           showToastMessage('Failed to upload meme. Please try again.', '#ff0099');
@@ -1364,6 +1364,9 @@ uploadIcon.style.marginRight = '8px';
     postButton.innerHTML = 'Launch Rebellion';
   }
 });
+
+            }
+          }
         
         // Display the modal for petition verification
         function showVerificationModal(proposalId) {
