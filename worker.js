@@ -3,6 +3,7 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Max-Age': '86400'
 };
 
 // Handle OPTIONS request for CORS preflight
@@ -1109,137 +1110,31 @@ async function healthCheck(env) {
 async function getProposals(request, env) {
   try {
     const url = new URL(request.url);
-    const sortBy = url.searchParams.get('sortBy') || 'newest';
+    const page = parseInt(url.searchParams.get('page')) || 1;
+    const limit = Math.min(
+      parseInt(url.searchParams.get('limit')) || DEFAULT_PAGE_SIZE,
+      MAX_PAGE_SIZE
+    );
+    const offset = (page - 1) * limit;
     
-    // Log request details
-    console.log(`Getting proposals with sort: ${sortBy}`);
+    // Add to your SQL query
+    query += ` LIMIT ? OFFSET ?`;
     
-    let query = `
-    SELECT 
-      p.id, p.text, p.timestamp, p.trending, p.meme_url,
-      u.name as author_name, u.id as author_id,
-      (SELECT COUNT(*) FROM votes WHERE proposal_id = p.id AND vote_type = 'upvote') as upvotes,
-      (SELECT COUNT(*) FROM votes WHERE proposal_id = p.id AND vote_type = 'downvote') as downvotes,
-      (SELECT COUNT(*) FROM votes WHERE proposal_id = p.id AND vote_type = 'upvote' AND is_petition = 1) as petition_signatures,
-      (SELECT COUNT(DISTINCT pd.user_id) FROM petition_details pd WHERE pd.proposal_id = p.id AND pd.verified = 1) as verified_petitioners
-    FROM proposals p
-    JOIN users u ON p.author_id = u.id
-  `;
-    // Add sorting
-    if (sortBy === 'newest') {
-      query += ' ORDER BY p.timestamp DESC';
-    } else if (sortBy === 'popular') {
-      query += ` 
-        ORDER BY (
-          (SELECT COUNT(*) FROM votes WHERE proposal_id = p.id AND vote_type = 'upvote') -
-          (SELECT COUNT(*) FROM votes WHERE proposal_id = p.id AND vote_type = 'downvote')
-        ) DESC
-      `;
-    } else if (sortBy === 'controversial') {
-      query += ` 
-        ORDER BY (
-          (SELECT COUNT(*) FROM votes WHERE proposal_id = p.id AND vote_type = 'upvote') +
-          (SELECT COUNT(*) FROM votes WHERE proposal_id = p.id AND vote_type = 'downvote')
-        ) DESC
-      `;
-    } else if (sortBy === 'petitions') {
-      // New sorting option for most petitioned
-      query += `
-        ORDER BY (
-          (SELECT COUNT(*) FROM votes WHERE proposal_id = p.id AND vote_type = 'upvote' AND is_petition = 1)
-        ) DESC
-      `;
-    }
+    // Add to your bind parameters
+    const proposals = await env.DB.prepare(query).bind(limit, offset).all();
     
-    console.log(`Executing query: ${query}`);
-    
-    // Get user ID for checking existing votes
-    const userId = url.searchParams.get('userId');
-    let proposals;
-    
-    try {
-      proposals = await env.DB.prepare(query).all();
-      console.log(`Retrieved ${proposals.results.length} proposals`);
-    } catch (dbError) {
-      return createResponse({ 
-        error: 'Failed to retrieve proposals', 
-        details: logError(dbError, { action: 'get_proposals', query })
-      }, 500);
-    }
-    
-    // If we have a userId, get their votes for these proposals
-    if (userId && proposals.results.length > 0) {
-      const proposalIds = proposals.results.map(p => p.id);
-      
-      try {
-        // Use parameter binding with placeholders
-        let placeholderStr = '';
-        for (let i = 0; i < proposalIds.length; i++) {
-          placeholderStr += (i === 0 ? '?' : ',?');
-        }
-        
-        const votesQuery = `
-          SELECT proposal_id, vote_type, is_petition
-          FROM votes
-          WHERE user_id = ? AND proposal_id IN (${placeholderStr})
-        `;
-        
-        console.log(`Executing votes query for user ${userId} with ${proposalIds.length} proposals`);
-        
-        const bindParams = [userId, ...proposalIds];
-        const votes = await env.DB.prepare(votesQuery).bind(...bindParams).all();
-        
-        console.log(`Retrieved ${votes.results.length} votes for user ${userId}`);
-        
-        // Create a map of proposal_id to vote info
-        const voteMap = {};
-        for (const vote of votes.results) {
-          voteMap[vote.proposal_id] = {
-            voteType: vote.vote_type,
-            isPetition: vote.is_petition === 1
-          };
-        }
-        
-        // Also get petition details status
-        const petitionQuery = `
-          SELECT proposal_id, verified
-          FROM petition_details
-          WHERE user_id = ? AND proposal_id IN (${placeholderStr})
-        `;
-        
-        const petitionDetails = await env.DB.prepare(petitionQuery).bind(...bindParams).all();
-        const petitionMap = {};
-        
-        for (const petition of petitionDetails.results) {
-          petitionMap[petition.proposal_id] = {
-            verified: petition.verified === 1
-          };
-        }
-        
-        // Add user's vote and petition status to each proposal
-        for (const proposal of proposals.results) {
-          const voteInfo = voteMap[proposal.id];
-          proposal.userVote = voteInfo ? voteInfo.voteType : null;
-          proposal.userPetitionSigned = voteInfo ? voteInfo.isPetition : false;
-          proposal.userPetitionVerified = petitionMap[proposal.id] ? petitionMap[proposal.id].verified : false;
-        }
-      } catch (voteError) {
-        // Just log the error but continue - we'll return proposals without vote data
-        logError(voteError, { 
-          action: 'get_user_votes', 
-          userId, 
-          proposalCount: proposalIds.length 
-        });
-        console.log('Warning: Failed to retrieve user votes, continuing without vote data');
+    // Add pagination info to response
+    return createResponse({
+      data: proposals.results,
+      pagination: {
+        page,
+        limit,
+        total: proposals.results.length,
+        hasMore: proposals.results.length === limit
       }
-    }
-    
-    return createResponse(proposals.results);
+    });
   } catch (error) {
-    return createResponse({ 
-      error: 'Failed to process proposals request', 
-      details: logError(error, { action: 'get_proposals_outer' })
-    }, 500);
+    // ... error handling ...
   }
 }
 
@@ -2376,3 +2271,38 @@ async function serveCustomizedHtml(proposalId, request, env) {
     return await fetch(request);
   }
 }
+
+function getCacheControl(path) {
+  const cacheRules = {
+    '/api/health': 'public, max-age=3600',
+    '/api/proposals': 'public, max-age=300, stale-while-revalidate=60',
+    '/api/comments': 'public, max-age=60, stale-while-revalidate=30',
+    default: 'no-cache'
+  };
+  
+  return cacheRules[path] || cacheRules.default;
+}
+
+// In your fetch handler
+if (request.method === "GET") {
+  const cacheControl = getCacheControl(path);
+  response.headers.set('Cache-Control', cacheControl);
+}
+
+function validateRequest(request, requiredParams = []) {
+  const url = new URL(request.url);
+  const missingParams = requiredParams.filter(param => !url.searchParams.has(param));
+  
+  if (missingParams.length > 0) {
+    return createResponse({
+      error: 'Missing required parameters',
+      missing: missingParams
+    }, 400);
+  }
+  
+  return null;
+}
+
+// In your endpoint handlers
+const validationError = validateRequest(request, ['userId']);
+if (validationError) return validationError;
