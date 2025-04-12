@@ -370,30 +370,57 @@ function getMediaURL(path) {
                 if (postButton) postButton.innerHTML = 'Launch Rebellion';
             }
         
-        // Load user data
-        async function loadUserData() {
-            // User information (in a real app, this would come from authentication)
-            currentUser = JSON.parse(localStorage.getItem('radical_user'));
-            
-            // If no user exists, create a new one
-            if (!currentUser) {
-                currentUser = {
-                    id: 'citizen_' + Math.random().toString(36).substr(2, 9),
-                    name: 'Citizen ' + Math.floor(Math.random() * 9000 + 1000)
-                };
-                
-                // Save user to local storage
-                localStorage.setItem('radical_user', JSON.stringify(currentUser));
-            }
-            
-            // Create or get user in the database
-            try {
-                await createUser(currentUser);
-                console.log("User registration complete");
-            } catch (error) {
-                console.error("Failed to register user on page load");
-            }
-        }
+      // Load user data
+async function loadUserData() {
+  try {
+    // User information from localStorage
+    currentUser = JSON.parse(localStorage.getItem('radical_user'));
+    
+    // If no user exists, create a new one
+    if (!currentUser || !currentUser.id) {
+      console.log("No user found in localStorage, creating new one");
+      currentUser = {
+        id: 'citizen_' + Math.random().toString(36).substr(2, 9),
+        name: 'Citizen ' + Math.floor(Math.random() * 9000 + 1000)
+      };
+      
+      // Save user to local storage
+      localStorage.setItem('radical_user', JSON.stringify(currentUser));
+    }
+    
+    console.log("Current user:", currentUser);
+    
+    // Create or get user in the database - with explicit error handling
+    const userData = await createUser(currentUser);
+    console.log("User registration complete:", userData);
+    
+    return currentUser;
+  } catch (error) {
+    console.error("Failed to register user on page load:", error);
+    
+    // Create emergency backup user if registration fails
+    const backupUser = {
+      id: 'emergency_' + Date.now(),
+      name: 'Emergency User'
+    };
+    
+    try {
+      // Try to register the backup user
+      await createUser(backupUser);
+      
+      // If successful, update currentUser and localStorage
+      currentUser = backupUser;
+      localStorage.setItem('radical_user', JSON.stringify(currentUser));
+      console.log("Created emergency backup user:", currentUser);
+      
+      return currentUser;
+    } catch (backupError) {
+      console.error("Even backup user creation failed:", backupError);
+      showToastMessage("Connection issues - please refresh the page", "#ff0099");
+      throw backupError;
+    }
+  }
+}
         
         // Load verified users data
         function loadVerifiedUsers() {
@@ -443,7 +470,11 @@ function getMediaURL(path) {
   try {
     console.log("Creating user:", user);
     
-    const data = await safeFetch(`${API_BASE_URL}/users`, {
+    if (!user || !user.id || !user.name) {
+      throw new Error("Invalid user object - missing id or name");
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -454,6 +485,12 @@ function getMediaURL(path) {
       })
     });
     
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`User creation failed: ${response.status} ${errorText}`);
+    }
+    
+    const data = await response.json();
     console.log("User creation successful:", data);
     return data;
   } catch (error) {
@@ -461,7 +498,6 @@ function getMediaURL(path) {
     throw error;
   }
 }
-        
         // Animation for successful post
         function animatePostSuccess() {
             const successEl = document.createElement('div');
@@ -1196,119 +1232,138 @@ uploadIcon.style.marginRight = '8px';
                 
                 // Add new handler
                 postButton.addEventListener('click', async () => {
-                    const proposalInput = document.getElementById('proposal-input');
-                    const text = proposalInput?.value.trim();
-                    
-                    postButton.innerHTML = 'Launch Rebellion <div class="loader"></div>';
-                    
-                    if (text) {
-                        try {
-                            const trending = Math.random() > 0.8; // Randomly mark some as trending
-                            
-                            // Create the proposal first
-                            const createResponse = await safeFetch(`${API_BASE_URL}/proposals`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    authorId: currentUser.id,
-                                    text: text,
-                                    trending: trending
-                                })
-                            });
-                            
-                            if (!createResponse.ok) {
-                                throw new Error('Failed to create proposal');
-                            }
-                            
-                            const proposalData = await createResponse.json();
-                            const proposalId = proposalData.id;
-                            
-                            // If there's a meme, upload it
-                            if (selectedMeme) {
-                                // Show progress bar
-                                memeUpload.progress.style.display = 'block';
-                                memeUpload.progressBar.style.width = '0%';
-                                
-                                // Create form data for file upload
-                                const formData = new FormData();
-                                formData.append('proposalId', proposalId);
-                                formData.append('meme', selectedMeme);
-                                
-                                // Track upload progress
-                                const xhr = new XMLHttpRequest();
-                                xhr.open('POST', `${API_BASE_URL}/memes`);
-                                
-                                xhr.upload.addEventListener('progress', (event) => {
-                                    if (event.lengthComputable) {
-                                        const percent = (event.loaded / event.total) * 100;
-                                        memeUpload.progressBar.style.width = percent + '%';
-                                    }
-                                });
-                                
-                                xhr.addEventListener('load', () => {
-                                    if (xhr.status >= 200 && xhr.status < 300) {
-                                        // Upload successful
-                                        memeUpload.progress.style.display = 'none';
-                                        
-                                        // Clear the meme upload
-                                        selectedMeme = null;
-                                        memeUpload.input.value = '';
-                                        memeUpload.preview.style.display = 'none';
-                                        memeUpload.image.src = '';
-
-                                        //Clear Loader
-                                        postButton.innerHTML = 'Launch Rebellion';
-                                        
-                                        // Show success message
-                                        animatePostSuccess();
-                                        
-                                        // Clear input
-                                        proposalInput.value = '';
-                                        charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
-                                        postButton.disabled = true;
-                                        
-                                        // Refresh proposals
-                                        fetchProposals();
-                                    } else {
-                                        // Upload failed
-                                        memeUpload.progress.style.display = 'none';
-                                        console.error('Meme upload failed:', xhr.responseText);
-                                        showToastMessage('Failed to upload meme. Please try again.', '#ff0099');
-                                    }
-                                });
-                                
-                                xhr.addEventListener('error', () => {
-                                    memeUpload.progress.style.display = 'none';
-                                    console.error('Meme upload network error');
-                                    showToastMessage('Failed to upload meme. Please check your connection.', '#ff0099');
-                                });
-                                
-                                // Send the upload
-                                xhr.send(formData);
-                            } else {
-                                // No meme to upload, just show success and refresh
-                                // Clear input
-                                postButton.innerHTML = 'Launch Rebellion';
-                                proposalInput.value = '';
-                                charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
-                                postButton.disabled = true;
-                                
-                                // Show success animation
-                                animatePostSuccess();
-                                
-                                // Refresh proposals
-                                fetchProposals();
-                            }
-                        } catch (error) {
-                            console.error('Error creating proposal:', error);
-                            showErrorMessage('Failed to post your petition. Parliament might be onto us!');
-                        }
-                    }
-                });
-            }
+  const proposalInput = document.getElementById('proposal-input');
+  const text = proposalInput?.value.trim();
+  
+  if (!text) return;
+  
+  // Show loading state
+  postButton.disabled = true;
+  postButton.innerHTML = 'Launching... <div class="loader"></div>';
+  
+  try {
+    // Verify user exists first
+    if (!currentUser || !currentUser.id) {
+      console.log("No current user - creating one");
+      await loadUserData(); // Reinitialize user
+    }
+    
+    console.log("Posting with user:", currentUser);
+    
+    // Create the proposal with verified user
+    const trending = Math.random() > 0.8;
+    const proposalData = {
+      authorId: currentUser.id,
+      text: text,
+      trending: trending
+    };
+    
+    console.log("Creating proposal:", proposalData);
+    
+    const createResponse = await fetch(`${API_BASE_URL}/proposals`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(proposalData)
+    });
+    
+    if (!createResponse.ok) {
+      const errorText = await createResponse.text();
+      throw new Error(`Failed to create proposal: ${errorText}`);
+    }
+    
+    const proposalResult = await createResponse.json();
+    console.log("Proposal created successfully:", proposalResult);
+    
+    // Get the proposal ID from the result
+    const proposalId = proposalResult.id;
+    
+    // If there's a meme, upload it
+    if (selectedMeme) {
+      // Show progress bar
+      memeUpload.progress.style.display = 'block';
+      memeUpload.progressBar.style.width = '0%';
+      
+      // Create form data for file upload
+      const formData = new FormData();
+      formData.append('proposalId', proposalId);
+      formData.append('meme', selectedMeme);
+      
+      // Track upload progress
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API_BASE_URL}/memes`);
+      
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percent = (event.loaded / event.total) * 100;
+          memeUpload.progressBar.style.width = percent + '%';
         }
+      });
+      
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          // Upload successful
+          memeUpload.progress.style.display = 'none';
+          
+          // Clear the meme upload
+          selectedMeme = null;
+          memeUpload.input.value = '';
+          memeUpload.preview.style.display = 'none';
+          memeUpload.image.src = '';
+
+          //Clear Loader
+          postButton.innerHTML = 'Launch Rebellion';
+          
+          // Show success message
+          animatePostSuccess();
+          
+          // Clear input
+          proposalInput.value = '';
+          charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
+          postButton.disabled = true;
+          
+          // Refresh proposals
+          fetchProposals();
+        } else {
+          // Upload failed
+          memeUpload.progress.style.display = 'none';
+          console.error('Meme upload failed:', xhr.responseText);
+          showToastMessage('Failed to upload meme. Please try again.', '#ff0099');
+        }
+      });
+      
+      xhr.addEventListener('error', () => {
+        memeUpload.progress.style.display = 'none';
+        console.error('Meme upload network error');
+        showToastMessage('Failed to upload meme. Please check your connection.', '#ff0099');
+      });
+      
+      // Send the upload
+      xhr.send(formData);
+    } else {
+      // No meme to upload, just show success and refresh
+      // Clear input
+      postButton.innerHTML = 'Launch Rebellion';
+      proposalInput.value = '';
+      charCounter.textContent = `${CHAR_LIMIT} characters remaining`;
+      postButton.disabled = true;
+      
+      // Show success message
+      animatePostSuccess();
+      
+      // Refresh proposals
+      fetchProposals();
+    }
+  } catch (error) {
+    console.error('Error creating proposal:', error);
+    showToastMessage('Failed to post your proposal. Please try again.', '#ff0099');
+  } finally {
+    // Always reset button state
+    postButton.disabled = false;
+    postButton.innerHTML = 'Launch Rebellion';
+  }
+});
         
         // Display the modal for petition verification
         function showVerificationModal(proposalId) {
@@ -1555,18 +1610,18 @@ uploadIcon.style.marginRight = '8px';
       showToastMessage('Loading petition...', '#11cc77');
       
       // Fetch the specific proposal
-      const response = await safeFetch(`${API_BASE_URL}/proposals?userId=${currentUser.id}`);
+      const response = await fetch(`${API_BASE_URL}/proposals/${proposalId}?userId=${currentUser ? currentUser.id : 'anonymous'}`);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch proposal');
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch proposal: ${response.status} ${errorText}`);
       }
       
-      const proposals = await response.json();
-      const targetProposal = proposals.find(p => p.id === proposalId);
+      const proposal = await response.json();
       
-      if (targetProposal) {
+      if (proposal) {
         // Create and show the modal with the proposal data
-        createProposalViewModal(targetProposal);
+        createProposalViewModal(proposal);
       } else {
         showToastMessage('⚠️ Petition not found', '#ff0099');
       }
