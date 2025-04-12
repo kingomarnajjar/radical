@@ -1,0 +1,31 @@
+name = "radical"
+main = "worker.js"
+compatibility_date = "2024-03-31"
+
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB" # Use this name in your code
+database_name = "radical-db"
+database_id = "1f2a5273-bfcb-45c8-a759-5d675c05620c"
+
+# R2 Bucket Binding
+[[r2_buckets]]
+binding = "MEMES_BUCKET"
+bucket_name = "memes"
+
+# Environment variables (optional)
+[vars]
+ENVIRONMENT = "production"
+
+# wrangler.toml (wrangler v3.88.0^)
+[observability.logs]
+enabled = true
+
+
+# Route API requests to your worker
+[[routes]]
+pattern = "theradicalparty.com/api/*"
+zone_name = "theradicalparty.com"
+
+
+
