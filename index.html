@@ -269,26 +269,25 @@ function getAPIBaseURL() {
   const hostname = window.location.hostname;
   const protocol = window.location.protocol;
   
-  switch(hostname) {
-    case 'localhost':
-      return 'http://localhost:8787/api';
-    case 'theradicalparty.com':
-    case 'www.theradicalparty.com':
-      return `${protocol}//theradicalparty.com/api`;
-    case 'radical.omar-c29.workers.dev':
-      return `${protocol}//radical.omar-c29.workers.dev/api`;
-    default:
-      return `${protocol}//${hostname}/api`;
+  // Always use the main domain for API calls
+  if (hostname === 'theradicalparty.com' || hostname === 'www.theradicalparty.com') {
+    return `${protocol}//theradicalparty.com/api`;
+  } else if (hostname === 'radical-dmd.pages.dev' || hostname.endsWith('.pages.dev')) {
+    // For preview deployments, use the main domain's API
+    return `https://theradicalparty.com/api`;
+  } else if (hostname === 'localhost') {
+    return 'http://localhost:8787/api';
+  } else {
+    // Fallback
+    return `${protocol}//${hostname}/api`;
   }
 }
 
 const API_BASE_URL = getAPIBaseURL();
 
 function getMediaURL(path) {
-  const baseURL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:8787' 
-    : `https://${window.location.hostname}`;
-  return `${baseURL}${path}`;
+  // Always use the main domain for media assets
+  return `https://theradicalparty.com${path}`;
 }
 
 
