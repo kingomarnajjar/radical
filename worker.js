@@ -33,6 +33,21 @@ function createResponse(body, status = 200, cacheDuration = 60*60*24) {
   });
 }
 
+// Helper function to validate request parameters
+function validateRequest(request, requiredParams = []) {
+  const url = new URL(request.url);
+  const missingParams = requiredParams.filter(param => !url.searchParams.has(param));
+  
+  if (missingParams.length > 0) {
+    return createResponse({
+      error: 'Missing required parameters',
+      missing: missingParams
+    }, 400);
+  }
+  
+  return null;
+}
+
 export default {
   async fetch(request, env, ctx) {
     try {
@@ -57,11 +72,16 @@ export default {
       // Handle API endpoints
       if (path.startsWith('/api/')) {
         try {
+          // Validate request parameters for specific endpoints
           if (path === '/api/proposals' && request.method === 'GET') {
+            const validationError = validateRequest(request, ['userId']);
+            if (validationError) return validationError;
             return await getProposals(request, env);
           } else if (path === '/api/proposals' && request.method === 'POST') {
             return await createProposal(request, env);
           } else if (path === '/api/comments' && request.method === 'GET') {
+            const validationError = validateRequest(request, ['proposalId']);
+            if (validationError) return validationError;
             return await getComments(request, env);
           } else if (path === '/api/comments' && request.method === 'POST') {
             return await createComment(request, env);
@@ -2040,21 +2060,3 @@ if (request.method === "GET") {
   const cacheControl = getCacheControl(path);
   response.headers.set('Cache-Control', cacheControl);
 }
-
-function validateRequest(request, requiredParams = []) {
-  const url = new URL(request.url);
-  const missingParams = requiredParams.filter(param => !url.searchParams.has(param));
-  
-  if (missingParams.length > 0) {
-    return createResponse({
-      error: 'Missing required parameters',
-      missing: missingParams
-    }, 400);
-  }
-  
-  return null;
-}
-
-// In your endpoint handlers
-const validationError = validateRequest(request, ['userId']);
-if (validationError) return validationError;
