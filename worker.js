@@ -65,6 +65,9 @@ export default {
     try {
       const url = new URL(request.url);
       const path = url.pathname;
+      
+      console.log(`Received request for path: ${path}`);
+      console.log(`Full URL: ${url.toString()}`);
 
       // Handle CORS preflight requests
       if (request.method === 'OPTIONS') {
@@ -78,6 +81,7 @@ export default {
 
       // Handle static assets
       if (path === '/styles.css' || path === '/index.html' || path === '/') {
+        console.log('Routing to static asset handler');
         return serveStaticAsset(request, env);
       }
 
@@ -156,7 +160,7 @@ async function serveMedia(request, env) {
     // Create response with appropriate headers
     const headers = new Headers();
     headers.set('Content-Type', contentType);
-    headers.set('Cache-Control', 'public, max-age=31536000'); // 1 year cache
+    headers.set('Cache-Control', 'public, max-age=31536000'); // Cache for a year
     headers.set('Access-Control-Allow-Origin', '*');
     
     return new Response(object.body, {
@@ -175,13 +179,17 @@ async function serveStaticAsset(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
     
+    console.log(`Attempting to serve static asset: ${path}`);
+    
     // Get the asset from the ASSETS binding
     const asset = await env.ASSETS.get(path.substring(1));
     
     if (!asset) {
-      console.error(`Asset not found: ${path}`);
+      console.error(`Asset not found in bucket: ${path}`);
       return new Response('Asset Not Found', { status: 404 });
     }
+    
+    console.log(`Asset found, size: ${asset.size} bytes`);
     
     // Determine content type based on file extension
     let contentType = 'text/plain';
@@ -192,6 +200,8 @@ async function serveStaticAsset(request, env) {
     } else if (path.endsWith('.html')) {
       contentType = 'text/html';
     }
+    
+    console.log(`Content type set to: ${contentType}`);
     
     // Create response with appropriate headers
     const headers = new Headers();
