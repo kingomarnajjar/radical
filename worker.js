@@ -37,297 +37,142 @@ export default {
   async fetch(request, env, ctx) {
     try {
       const url = new URL(request.url);
-
-      // Acceptable hostnames
-      const validHostnames = [
-        'theradicalparty.com', 
-        'www.theradicalparty.com',
-        'radical.omar-c29.workers.dev'
-      ];
-
-      // Check if the hostname is valid
-      if (!validHostnames.includes(url.hostname)) {
-        console.error(`Unexpected hostname: ${url.hostname}`);
-        return new Response('Invalid hostname', { status: 400 });
-      }
-
       const path = url.pathname;
-      const proposalId = url.searchParams.get('proposal');
 
-      console.log(`Processing request: ${url.toString()}`);
-      console.log(`User-Agent: ${request.headers.get('User-Agent')}`);
-
-      // Handle CORS preflight requests first
+      // Handle CORS preflight requests
       if (request.method === 'OPTIONS') {
         return handleOptions();
       }
 
-      // For GET requests, try to serve from cache first
-      if (request.method === "GET") {
-        // Create a cache key from the request URL
-        const cacheKey = new Request(request.url, {
-          headers: request.headers
-        });
-        
-        // Try to get from cache first
-        let cachedResponse = await caches.default.match(cacheKey);
-        
-        if (cachedResponse) {
-          // Add header to indicate cache hit
-          cachedResponse = new Response(cachedResponse.body, cachedResponse);
-          cachedResponse.headers.set("CF-Cache-Status", "HIT");
-          
-          // Ensure CORS headers are present
-          Object.keys(corsHeaders).forEach(key => {
-            cachedResponse.headers.set(key, corsHeaders[key]);
-          });
-          
-          return cachedResponse;
-        }
+      // Handle static assets
+      if (path === '/styles.css' || path === '/index.html' || path === '/') {
+        return serveStaticAsset(request, env);
       }
 
-      // Handle styles.css route
-if (path === '/styles.css') {
-  try {
-    // Determine the correct source based on the request's origin
-    const cssSourceUrl = 
-      request.headers.get('Origin')?.includes('localhost') 
-        ? 'http://localhost:3000/styles.css'
-        : 'https://radical.pages.dev/radical/styles.css';
-
-    // Fetch CSS 
-    const response = await fetch(cssSourceUrl, {
-      headers: {
-        'User-Agent': request.headers.get('User-Agent') || 'Cloudflare Worker'
-      }
-    });
-    
-    if (!response.ok) {
-      console.error('Failed to fetch styles.css', response.status, response.statusText);
-      return new Response('CSS File Not Found', { 
-        status: 404,
-        headers: {
-          'Content-Type': 'text/css',
-          ...corsHeaders
-        }
-      });
-    }
-    
-    // Get the CSS content
-    const cssContent = await response.text();
-    
-    // Prepare CORS headers specific to the requesting origin
-    const requestOrigin = request.headers.get('Origin') || '*';
-    const specificCorsHeaders = {
-      'Content-Type': 'text/css',
-      'Access-Control-Allow-Origin': requestOrigin,
-      'Access-Control-Allow-Methods': 'GET',
-      'Access-Control-Max-Age': '86400',
-      'Cache-Control': 'public, max-age=86400' // 1 day cache
-    };
-    
-    // Create CSS response with precise headers
-    const cssResponse = new Response(cssContent, {
-      status: 200,
-      headers: specificCorsHeaders
-    });
-
-    // Store in cache if this is a GET request
-    if (request.method === "GET") {
-      const cacheKey = new Request(request.url, {
-        headers: request.headers
-      });
-      ctx.waitUntil(caches.default.put(cacheKey, cssResponse.clone()));
-    }
-    
-    return cssResponse;
-  } catch (error) {
-    console.error('Comprehensive styles.css fetch error:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
-
-    return new Response('Failed to load stylesheet', { 
-      status: 500,
-      headers: {
-        'Content-Type': 'text/css',
-        ...corsHeaders
-      }
-    });
-  }
-}
-
-      const isTestMeta = url.searchParams.get('test_meta') === 'true';
-
-      // Handle root path and index.html with potential meta tag testing
-      if (path === '/' || path === '/index.html') {
-        // If test_meta is true or there's a proposal, use customization
-        if (isTestMeta || proposalId) {
-          return await serveCustomizedHtml(proposalId || 'test_proposal', request, env);
-        }
-        
-        // Otherwise, serve main page normally
-        return await serveMainPage(request, env);
-      }
-
-      if (path === '/api/petition-svg') {
-        return await servePetitionSVG(request, env);
-      }
-      
-      // Meta tag testing
-      if (url.searchParams.get('test_meta') === 'true') {
-        console.log('Meta tag test detected');
-        
-        // If there's a proposal during meta test, use customization
-        if (proposalId && (path === '/' || path === '/index.html')) {
-          console.log(`Detected proposal in URL during meta test: ${proposalId}`);
-          return await serveCustomizedHtml(proposalId, request, env);
-        }
-      }
-      
-      console.log(`Received ${request.method} request to ${path}`);
-      
-      // Check if the DB binding exists
-      if (!env.DB) {
-        console.error('DB binding is missing! Check your wrangler.toml configuration.');
-        return createResponse({ 
-          error: 'Database configuration error. Missing DB binding.',
-          hint: 'Check your wrangler.toml file and make sure the DB binding is correctly set up.'
-        }, 500);
-      }
-
-      // Handle media files (memes and audio)
+      // Handle media files
       if (path.startsWith('/memes/') || path.startsWith('/audio/')) {
-        const mediaResponse = await serveMedia(request, env);
-        
-        // Cache media responses for GET requests
-        if (request.method === "GET") {
-          const cacheKey = new Request(request.url, {
-            headers: request.headers
-          });
-          
-          // Clone the response before modifying
-          const responseToCache = new Response(mediaResponse.body, mediaResponse);
-          
-          // Cache media files for 7 days
-          responseToCache.headers.set('Cache-Control', 'public, max-age=604800');
-          
-          ctx.waitUntil(caches.default.put(cacheKey, responseToCache.clone()));
-        }
-        
-        return mediaResponse;
-      } else if (path === '/api/memes' && request.method === 'POST') {
-        return await uploadMeme(request, env);
-      }
-      
-      // Route requests to appropriate handlers
-      let response;
-      
-      if (path === '/api/health') {
-        response = await healthCheck(env);
-      } else if (path === '/api/debug-meta') {
-        response = await debugMetaTags(request, env);
-      } else if (path === '/login' || path === '/login.html') {
-        response = await serveLoginPage(request, env);
-      } else if (path === '/api/login' && request.method === 'POST') {
-        response = await validateLogin(request, env);
-      } else if (path === '/api/proposals' && request.method === 'GET') {
-        response = await getProposals(request, env);
-      } else if (path === '/api/proposals' && request.method === 'POST') {
-        response = await createProposal(request, env);
-      } else if (path.startsWith('/api/proposals/') && request.method === 'GET') {
-        response = await getProposalById(request, env);
-      } else if (path.startsWith('/api/proposals/') && request.method === 'PUT') {
-        const id = path.split('/').pop();
-        response = await updateProposal(id, request, env);
-      } else if (path === '/api/votes' && request.method === 'POST') {
-        response = await createOrUpdateVote(request, env);
-      } else if (path === '/api/users' && request.method === 'POST') {
-        response = await createOrGetUser(request, env);
-      } else if (path === '/api/petition-stats' && request.method === 'GET') {
-        response = await getPetitionStats(request, env);
-      } else if (path === '/api/comments' && request.method === 'GET') {
-        response = await getComments(request, env);
-      } else if (path === '/api/comments' && request.method === 'POST') {
-        response = await createComment(request, env);
-      } else if (path === '/api/comment-votes' && request.method === 'POST') {
-        response = await createOrUpdateCommentVote(request, env);
-      } else if (path === '/api/comment-votes' && request.method === 'GET') {
-        response = await getCommentVotes(request, env);
-      } else {
-        response = createResponse({ 
-          error: 'Not found', 
-          path,
-          method: request.method,
-          availableRoutes: [
-            { path: '/api/health', method: 'GET', description: 'Check system health' },
-            { path: '/api/proposals', method: 'GET', description: 'Get proposals' },
-            { path: '/api/proposals/:id', method: 'GET', description: 'Get a single proposal by ID' },
-            { path: '/api/proposals/:id', method: 'PUT', description: 'Update proposal' },
-            { path: '/api/votes', method: 'POST', description: 'Create/update vote' },
-            { path: '/api/users', method: 'POST', description: 'Create/get user' },
-            { path: '/api/petition-stats', method: 'GET', description: 'Get petition statistics' }
-          ]
-        }, 404);
+        return serveMedia(request, env);
       }
 
-      // Cache certain GET responses
-      if (request.method === "GET") {
-        const shouldCache = path.startsWith('/api/proposals') || 
-                           path.startsWith('/api/comments') || 
-                           path === '/api/petition-stats' ||
-                           path === '/api/health';
-        
-        if (shouldCache && response) {
-          // We need to clone the response before reading its body
-          const responseToCache = new Response(response.body, response);
-          
-          // Set appropriate cache duration based on endpoint
-          let cacheDuration = 300; // 5 minutes default for API
-          if (path === '/api/health') {
-            cacheDuration = 3600; // 1 hour for health checks
+      // Handle API endpoints
+      if (path.startsWith('/api/')) {
+        try {
+          if (path === '/api/proposals' && request.method === 'GET') {
+            return await getProposals(request, env);
+          } else if (path === '/api/proposals' && request.method === 'POST') {
+            return await createProposal(request, env);
+          } else if (path === '/api/comments' && request.method === 'GET') {
+            return await getComments(request, env);
+          } else if (path === '/api/comments' && request.method === 'POST') {
+            return await createComment(request, env);
+          } else if (path === '/api/votes' && request.method === 'POST') {
+            return await createOrUpdateVote(request, env);
           }
-          
-          responseToCache.headers.set('Cache-Control', `public, max-age=${cacheDuration}`);
-          responseToCache.headers.set('CF-Cache-Status', 'MISS');
-          
-          // Ensure all CORS headers are present
-          Object.keys(corsHeaders).forEach(key => {
-            responseToCache.headers.set(key, corsHeaders[key]);
-          });
-          
-          const cacheKey = new Request(request.url, {
-            headers: request.headers
-          });
-          
-          ctx.waitUntil(caches.default.put(cacheKey, responseToCache.clone()));
-          
-          // Make sure the response we return also has CORS headers
-          Object.keys(corsHeaders).forEach(key => {
-            response.headers.set(key, corsHeaders[key]);
+        } catch (error) {
+          console.error('API Error:', error);
+          return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
           });
         }
       }
-      
-      return response;
-      
+
+      // Return 404 for unknown routes
+      return new Response('Not Found', { status: 404 });
     } catch (error) {
-      console.error('Critical error in request handling:', error);
-      return new Response(JSON.stringify({
-        error: 'Internal Server Error',
-        details: error.message
-      }), { 
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders // Add CORS headers to error responses too
-        }
-      });
+      console.error('Unhandled error:', error);
+      return new Response('Internal Server Error', { status: 500 });
     }
   }
 };
 
+// ... existing code ...
+
+// Handle media files (memes and audio)
+async function serveMedia(request, env) {
+  try {
+    const url = new URL(request.url);
+    const path = url.pathname;
+    
+    // Extract the filename from the path
+    const filename = path.split('/').pop();
+    
+    // Determine the correct bucket based on the path
+    const bucket = path.startsWith('/memes/') ? env.MEMES_BUCKET : env.AUDIO_BUCKET;
+    
+    if (!bucket) {
+      console.error('Missing bucket binding');
+      return new Response('Internal Server Error', { status: 500 });
+    }
+    
+    // Get the object from R2
+    const object = await bucket.get(filename);
+    
+    if (!object) {
+      console.error(`File not found: ${filename}`);
+      return new Response('File Not Found', { status: 404 });
+    }
+    
+    // Determine content type based on file extension
+    const contentType = path.endsWith('.mp3') ? 'audio/mpeg' : 'image/jpeg';
+    
+    // Create response with appropriate headers
+    const headers = new Headers();
+    headers.set('Content-Type', contentType);
+    headers.set('Cache-Control', 'public, max-age=31536000'); // 1 year cache
+    headers.set('Access-Control-Allow-Origin', '*');
+    
+    return new Response(object.body, {
+      headers,
+      status: 200
+    });
+  } catch (error) {
+    console.error('Error serving media:', error);
+    return new Response('Internal Server Error', { status: 500 });
+  }
+}
+
+// Handle static assets
+async function serveStaticAsset(request, env) {
+  try {
+    const url = new URL(request.url);
+    const path = url.pathname;
+    
+    // Get the asset from the ASSETS binding
+    const asset = await env.ASSETS.get(path.substring(1));
+    
+    if (!asset) {
+      console.error(`Asset not found: ${path}`);
+      return new Response('Asset Not Found', { status: 404 });
+    }
+    
+    // Determine content type based on file extension
+    let contentType = 'text/plain';
+    if (path.endsWith('.css')) {
+      contentType = 'text/css';
+    } else if (path.endsWith('.js')) {
+      contentType = 'application/javascript';
+    } else if (path.endsWith('.html')) {
+      contentType = 'text/html';
+    }
+    
+    // Create response with appropriate headers
+    const headers = new Headers();
+    headers.set('Content-Type', contentType);
+    headers.set('Cache-Control', 'public, max-age=31536000'); // 1 year cache
+    headers.set('Access-Control-Allow-Origin', '*');
+    
+    return new Response(asset, {
+      headers,
+      status: 200
+    });
+  } catch (error) {
+    console.error('Error serving static asset:', error);
+    return new Response('Internal Server Error', { status: 500 });
+  }
+}
+
+// ... existing code ...
 
 async function serveMainPage(request, env) {
   try {
@@ -1422,99 +1267,6 @@ async function updateProposal(id, request, env) {
       error: 'Failed to process proposal update', 
       details: logError(error, { action: 'update_proposal_outer', id }) 
       }, 500);
-  }
-}
-
-// Handle serving media files (memes and audio)
-async function serveMedia(request, env) {
-  const url = new URL(request.url);
-  const path = url.pathname;
-  
-  console.log('Media Request Details:', {
-    fullPath: path,
-    hostname: url.hostname,
-    method: request.method
-  });
-
-  // More explicit route matching
-  const audioRoutes = ['/audio/', '/memes/'];
-  const mediaRoute = audioRoutes.find(route => path.startsWith(route));
-
-  if (!mediaRoute) {
-    console.log('No matching media route found');
-    return new Response('Not Found', { 
-      status: 404,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'text/plain'
-      }
-    });
-  }
-
-  const key = path.replace(mediaRoute, '');
-  
-  console.log('Attempting to serve media:', {
-    bucket: 'MEMES_BUCKET',
-    key: key
-  });
-
-  try {
-    // Try to get the object from R2
-    const object = await env.MEMES_BUCKET.get(key);
-    
-    if (object === null) {
-      console.log(`File not found in bucket: ${key}`);
-      return new Response('File Not Found', { 
-        status: 404,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'text/plain'
-        }
-      });
-    }
-    
-    const headers = new Headers();
-    
-    // Determine content type based on file extension
-    const contentTypeMap = {
-      '.mp3': 'audio/mpeg',
-      '.wav': 'audio/wav',
-      '.ogg': 'audio/ogg',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.gif': 'image/gif'
-    };
-
-    const ext = key.slice(key.lastIndexOf('.'));
-    const contentType = contentTypeMap[ext] || 'application/octet-stream';
-
-    headers.set('Content-Type', contentType);
-    headers.set('etag', object.httpEtag);
-    headers.set('Cache-Control', 'public, max-age=31536000'); // Cache for a year
-    
-    // Add CORS headers
-    Object.keys(corsHeaders).forEach(corsKey => {
-      headers.set(corsKey, corsHeaders[corsKey]);
-    });
-    
-    console.log('Serving media with headers:', Object.fromEntries(headers));
-
-    return new Response(object.body, { headers });
-  } catch (error) {
-    console.error('Critical error serving media:', {
-      message: error.message,
-      stack: error.stack,
-      key: key
-    });
-
-    return new Response('Internal Server Error', { 
-      status: 500,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'text/plain'
-      }
-    });
   }
 }
 

@@ -1295,17 +1295,25 @@ uploadIcon.style.marginRight = '8px';
     
     console.log("Creating proposal:", proposalData);
     
+    // Add better error handling and logging
     const createResponse = await fetch(`${API_BASE_URL}/proposals`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
-      body: JSON.stringify(proposalData)
+      body: JSON.stringify(proposalData),
+      mode: 'cors',
+      credentials: 'same-origin'
     });
+    
+    console.log("Create response status:", createResponse.status);
+    console.log("Create response headers:", Object.fromEntries(createResponse.headers.entries()));
     
     if (!createResponse.ok) {
       const errorText = await createResponse.text();
-      throw new Error(`Failed to create proposal: ${errorText}`);
+      console.error("Error response:", errorText);
+      throw new Error(`Failed to create proposal: ${createResponse.status} ${errorText}`);
     }
     
     const proposalResult = await createResponse.json();
@@ -2438,8 +2446,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Log when the element is clicked for debugging
   console.log("Music prompt element found, adding click listener");
   
-  // Audio file URL - this should point to your audio file in R2
-  const audioUrl = getMediaURL('/audio/steppingout.mp3');
+  // Audio file URL - using a more reliable source
+  const audioUrl = 'https://theradicalparty.com/memes/steppingout.mp3';
   
   // Initialize music only when the "hit me" button is clicked
   musicPrompt.addEventListener('click', function(e) {
@@ -2484,6 +2492,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log("Music initialized successfully");
     } catch (error) {
       console.error("Error initializing music:", error);
+      showToastMessage("Failed to load audio. Please try again later.", "#ff0099");
     }
   }
   
@@ -2498,6 +2507,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Failed to play audio:', error);
       musicToggle.innerHTML = '<span class="vinyl-ready">📻</span>';
       musicToggle.classList.add('pulse');
+      showToastMessage("Audio playback failed. Please try again.", "#ff0099");
     });
   }
   
@@ -2510,6 +2520,15 @@ document.addEventListener('DOMContentLoaded', () => {
       musicToggle.classList.add('pulse');
     }
   }
+
+  // Add error event listener to handle audio loading failures
+  backgroundMusic.addEventListener('error', (e) => {
+    console.error('Audio error:', e);
+    showToastMessage("Failed to load audio. Please try again later.", "#ff0099");
+    musicControls.style.display = 'none';
+    musicPrompt.style.display = 'block';
+    musicInitialized = false;
+  });
 });
 
 document.addEventListener('DOMContentLoaded', () => {

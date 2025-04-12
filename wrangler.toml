@@ -21,7 +21,6 @@ ENVIRONMENT = "production"
 [observability.logs]
 enabled = true
 
-
 # Main routes for API endpoints
 [[routes]]
 pattern = "theradicalparty.com/api/*"
@@ -40,6 +39,11 @@ zone_name = "theradicalparty.com"
 [[routes]]
 pattern = "theradicalparty.com/styles.css"
 zone_name = "theradicalparty.com"
+
+# Pages integration
+[pages]
+build_command = "npm run build"
+build_output_dir = "dist"
 
 
 
