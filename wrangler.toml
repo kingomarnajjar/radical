@@ -41,10 +41,5 @@ zone_name = "theradicalparty.com"
 pattern = "theradicalparty.com/styles.css"
 zone_name = "theradicalparty.com"
 
-# Catch-all for other pages
-[[routes]]
-pattern = "theradicalparty.com/*"
-zone_name = "theradicalparty.com"
-
 
 
