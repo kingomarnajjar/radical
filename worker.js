@@ -6,6 +6,10 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400'
 };
 
+// Define pagination constants
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
+
 // Handle OPTIONS request for CORS preflight
 function handleOptions() {
   return new Response(null, {
