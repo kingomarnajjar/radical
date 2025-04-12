@@ -1198,16 +1198,28 @@ async function createProposal(request, env) {
     const data = await request.json();
     const { text, authorId, trending = false } = data;
     
-    console.log(`Creating proposal: ${JSON.stringify(data)}`);
+    console.log(`Creating proposal with data:`, {
+      text: text?.substring(0, 50) + '...',
+      authorId,
+      trending
+    });
     
     if (!text || !authorId) {
-      return createResponse({ error: 'Missing required fields', received: { text, authorId } }, 400);
+      console.error('Missing required fields:', { text: !!text, authorId: !!authorId });
+      return createResponse({ 
+        error: 'Missing required fields', 
+        received: { 
+          text: text ? '[present]' : '[missing]', 
+          authorId: authorId ? '[present]' : '[missing]' 
+        } 
+      }, 400);
     }
     
     // Check if user exists first
     try {
       const userCheck = await env.DB.prepare(`SELECT id, name FROM users WHERE id = ?`).bind(authorId).first();
       if (!userCheck) {
+        console.error('Author does not exist:', authorId);
         return createResponse({ 
           error: 'Author does not exist', 
           authorId,
@@ -1215,15 +1227,15 @@ async function createProposal(request, env) {
         }, 400);
       }
       
-      // Create a temporary proposal object with author name for image generation
-      const tempProposal = {
-        id: 'proposal_' + Date.now(),
-        text: text,
-        author_name: userCheck.name
-      };
-      
-      const id = tempProposal.id;
+      const id = 'proposal_' + Date.now();
       const timestamp = Date.now();
+      
+      console.log('Inserting proposal into database:', {
+        id,
+        authorId,
+        timestamp,
+        trending
+      });
       
       // Insert the proposal first
       const query = `
@@ -1233,16 +1245,31 @@ async function createProposal(request, env) {
       
       await env.DB.prepare(query).bind(id, authorId, text, timestamp, trending ? 1 : 0).run();
       
-      // Generate and store the share image
-      const shareImageUrl = await generateAndStoreShareImage(tempProposal, env);
+      console.log('Proposal inserted successfully');
       
-      // Update the proposal with the share image URL
-      if (shareImageUrl) {
-        await env.DB.prepare(`
-          UPDATE proposals
-          SET share_image_url = ?
-          WHERE id = ?
-        `).bind(shareImageUrl, id).run();
+      // Try to generate share image, but don't fail if it doesn't work
+      let shareImageUrl = null;
+      try {
+        // Create a temporary proposal object with author name for image generation
+        const tempProposal = {
+          id: id,
+          text: text,
+          author_name: userCheck.name
+        };
+        
+        shareImageUrl = await generateAndStoreShareImage(tempProposal, env);
+        
+        if (shareImageUrl) {
+          console.log('Updating proposal with share image URL:', shareImageUrl);
+          await env.DB.prepare(`
+            UPDATE proposals
+            SET share_image_url = ?
+            WHERE id = ?
+          `).bind(shareImageUrl, id).run();
+        }
+      } catch (imageError) {
+        console.error('Failed to generate share image, continuing without it:', imageError);
+        // Continue without the share image - it's not critical
       }
       
       console.log(`Successfully created proposal with ID: ${id}`);
@@ -1256,6 +1283,7 @@ async function createProposal(request, env) {
         shareImageUrl 
       });
     } catch (dbError) {
+      console.error('Database error during proposal creation:', dbError);
       return createResponse({ 
         error: 'Failed to create proposal in database', 
         details: logError(dbError, { 
@@ -1265,6 +1293,7 @@ async function createProposal(request, env) {
       }, 500);
     }
   } catch (error) {
+    console.error('Error in createProposal:', error);
     return createResponse({ 
       error: 'Failed to process proposal creation', 
       details: logError(error, { action: 'create_proposal_outer' })
