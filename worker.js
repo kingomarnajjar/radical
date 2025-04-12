@@ -48,6 +48,18 @@ function validateRequest(request, requiredParams = []) {
   return null;
 }
 
+// Helper function to get cache control headers
+function getCacheControl(path) {
+  const cacheRules = {
+    '/api/health': 'public, max-age=3600',
+    '/api/proposals': 'public, max-age=300, stale-while-revalidate=60',
+    '/api/comments': 'public, max-age=60, stale-while-revalidate=30',
+    default: 'no-cache'
+  };
+  
+  return cacheRules[path] || cacheRules.default;
+}
+
 export default {
   async fetch(request, env, ctx) {
     try {
@@ -58,6 +70,11 @@ export default {
       if (request.method === 'OPTIONS') {
         return handleOptions();
       }
+
+      // Set cache control headers based on path
+      const cacheControl = getCacheControl(path);
+      const headers = new Headers();
+      headers.set('Cache-Control', cacheControl);
 
       // Handle static assets
       if (path === '/styles.css' || path === '/index.html' || path === '/') {
@@ -2042,21 +2059,4 @@ async function serveCustomizedHtml(proposalId, request, env) {
     // Fall back to regular page if something goes wrong
     return await fetch(request);
   }
-}
-
-function getCacheControl(path) {
-  const cacheRules = {
-    '/api/health': 'public, max-age=3600',
-    '/api/proposals': 'public, max-age=300, stale-while-revalidate=60',
-    '/api/comments': 'public, max-age=60, stale-while-revalidate=30',
-    default: 'no-cache'
-  };
-  
-  return cacheRules[path] || cacheRules.default;
-}
-
-// In your fetch handler
-if (request.method === "GET") {
-  const cacheControl = getCacheControl(path);
-  response.headers.set('Cache-Control', cacheControl);
 }
