@@ -640,8 +640,14 @@ async function safeFetch(url, options = {}) {
     clearTimeout(timeoutId);
     
     // Check for successful response
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (response.status < 200 || response.status >= 300) {
+      let errorText;
+      try {
+        const errorData = await response.json();
+        errorText = errorData.error || JSON.stringify(errorData);
+      } catch (e) {
+        errorText = await response.text();
+      }
       
       // Check if this is a Cloudflare error
       if (errorText.includes('Cloudflare') || errorText.includes('cf-error')) {
@@ -663,7 +669,12 @@ async function safeFetch(url, options = {}) {
       throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
     }
     
-    return await response.json();
+    try {
+      return await response.json();
+    } catch (jsonError) {
+      console.error('Error parsing JSON response:', jsonError);
+      throw new Error('Invalid response format from server');
+    }
   } catch (error) {
     console.error('Fetch Error:', {
       message: error.message,
@@ -692,7 +703,7 @@ async function safeFetch(url, options = {}) {
     const sortBy = sortSelect ? sortSelect.value : 'newest';
     
     // Log the full request URL and parameters
-    const requestUrl = `${API_BASE_URL}/proposals?sortBy=${sortBy}&userId=${currentUser.id}`;
+    const requestUrl = `${API_BASE_URL}/proposals?sortBy=${sortBy}&userId=${currentUser?.id || 'anonymous'}`;
     console.log('Fetching proposals from:', requestUrl);
     console.log('Current user:', currentUser);
     
@@ -711,13 +722,35 @@ async function safeFetch(url, options = {}) {
     console.log('Response headers:', Object.fromEntries(response.headers.entries()));
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error response:', errorText);
+      let errorText;
+      try {
+        const errorData = await response.json();
+        console.error('Error response JSON:', errorData);
+        errorText = errorData.error || errorData.details?.message || JSON.stringify(errorData);
+      } catch (e) {
+        errorText = await response.text();
+        console.error('Error response text:', errorText);
+      }
       throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
     }
     
-    const data = await response.json();
-    console.log('Proposals data:', data);
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      console.error('Error parsing JSON response:', jsonError);
+      throw new Error('Invalid JSON response from server');
+    }
+    
+    console.log('Proposals data received:', {
+      count: data?.data?.length || 0,
+      pagination: data?.pagination
+    });
+    
+    if (!data || !data.data || !Array.isArray(data.data)) {
+      console.error('Invalid data structure:', data);
+      throw new Error('Invalid data structure received from server');
+    }
     
     renderProposals(data);
   } catch (error) {
@@ -2259,34 +2292,49 @@ async function submitComment(proposalId, commentText) {
   
   console.log(`Submitting comment for proposal ${proposalId}: ${commentText.substring(0, 20)}...`);
   
-  return safeFetch(`${API_BASE_URL}/comments`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      proposalId: proposalId,
-      userId: currentUser.id,
-      commentText: commentText
-    })
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Failed to post comment');
+  try {
+    const response = await fetch(`${API_BASE_URL}/comments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        proposalId: proposalId,
+        userId: currentUser.id,
+        commentText: commentText
+      })
+    });
+    
+    console.log("Comment submission response status:", response.status);
+    
+    if (response.status >= 200 && response.status < 300) {
+      // Successfully created comment
+      const data = await response.json();
+      console.log("Comment created successfully:", data);
+      
+      loadComments(proposalId);
+      updateCommentCount(proposalId);
+      showToastMessage('Comment posted!', '#11cc77');
+      return data;
+    } else {
+      // Server returned an error
+      let errorMessage;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || 'Unknown server error';
+      } catch (e) {
+        errorMessage = await response.text() || 'Failed to post comment';
+      }
+      
+      console.error('Error posting comment:', errorMessage);
+      showToastMessage('Failed to post comment', '#ff0099');
+      throw new Error(errorMessage);
     }
-    return response.json();
-  })
-  .then(data => {
-    loadComments(proposalId);
-    updateCommentCount(proposalId);
-    showToastMessage('Comment posted!', '#11cc77');
-    return data;
-  })
-  .catch(error => {
-    console.error('Error posting comment:', error);
+  } catch (error) {
+    console.error('Network or processing error:', error);
     showToastMessage('Failed to post comment', '#ff0099');
     throw error;
-  });
+  }
 }
 
 // Function to check if comment input is not empty

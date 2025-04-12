@@ -31,6 +31,8 @@ function createResponse(body, status = 200, cacheDuration = 60*60*24) {
     headers['Cache-Control'] = 'no-store';
   }
   
+  // Create a standard Response object
+  // This ensures properties like 'ok' are properly set based on status code
   return new Response(JSON.stringify(body), {
     status,
     headers
@@ -1033,6 +1035,9 @@ async function getProposals(request, env) {
       MAX_PAGE_SIZE
     );
     const offset = (page - 1) * limit;
+    const sortBy = url.searchParams.get('sortBy') || 'newest';
+    
+    console.log(`Getting proposals with sorting: ${sortBy}`);
     
     // Define the base query
     let query = `
@@ -1045,14 +1050,31 @@ async function getProposals(request, env) {
         (SELECT COUNT(DISTINCT pd.user_id) FROM petition_details pd WHERE pd.proposal_id = p.id AND pd.verified = 1) as verified_petitioners
       FROM proposals p
       JOIN users u ON p.author_id = u.id
-      ORDER BY p.timestamp DESC
     `;
+    
+    // Add sorting
+    if (sortBy === 'newest') {
+      query += ` ORDER BY p.timestamp DESC`;
+    } else if (sortBy === 'oldest') {
+      query += ` ORDER BY p.timestamp ASC`;
+    } else if (sortBy === 'popular') {
+      query += ` ORDER BY upvotes DESC, p.timestamp DESC`;
+    } else if (sortBy === 'controversial') {
+      query += ` ORDER BY (upvotes + downvotes) DESC, ABS(upvotes - downvotes) ASC, p.timestamp DESC`;
+    } else {
+      // Default to newest
+      query += ` ORDER BY p.timestamp DESC`;
+    }
     
     // Add pagination
     query += ` LIMIT ? OFFSET ?`;
     
+    console.log(`Executing query with pagination: limit=${limit}, offset=${offset}`);
+    
     // Execute the query
     const proposals = await env.DB.prepare(query).bind(limit, offset).all();
+    
+    console.log(`Retrieved ${proposals.results?.length || 0} proposals`);
     
     // Add pagination info to response
     return createResponse({
@@ -1060,11 +1082,12 @@ async function getProposals(request, env) {
       pagination: {
         page,
         limit,
-        total: proposals.results.length,
-        hasMore: proposals.results.length === limit
+        total: proposals.results?.length || 0,
+        hasMore: proposals.results?.length === limit
       }
     });
   } catch (error) {
+    console.error('Error retrieving proposals:', error);
     return createResponse({ 
       error: 'Failed to retrieve proposals', 
       details: logError(error, { action: 'get_proposals' })
