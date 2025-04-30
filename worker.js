@@ -2,11 +2,7 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-<<<<<<< Updated upstream
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
-=======
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, Cache-Control, X-Requested-With',
->>>>>>> Stashed changes
   'Access-Control-Max-Age': '86400'
 };
 
@@ -15,21 +11,10 @@ const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
 // Handle OPTIONS request for CORS preflight
-function handleOptions(request) {
-  if (
-    request.headers.get('Origin') !== null &&
-    request.headers.get('Access-Control-Request-Method') !== null &&
-    request.headers.get('Access-Control-Request-Headers') !== null
-  ) {
-    return new Response(null, {
-      headers: corsHeaders,
-      status: 204
-    });
-  } else {
-    return new Response(null, {
-      headers: corsHeaders
-    });
-  }
+function handleOptions() {
+  return new Response(null, {
+    headers: corsHeaders
+  });
 }
 
 // Helper to create standardized responses
