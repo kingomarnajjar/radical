@@ -31,16 +31,12 @@ function handleOptions(request) {
 
 // Helper to create standardized responses
 function createResponse(body, status = 200, cacheDuration = 60*60*24) {
-  // Don't allow null or undefined body
-  if (body === null || body === undefined) {
-    console.error('createResponse called with null or undefined body');
-    body = { error: 'Empty response body' };
-    status = 500;
-  }
+  // Convert body to string if it's an object
+  const bodyString = typeof body === 'object' ? JSON.stringify(body) : String(body);
   
   const headers = {
     'Content-Type': 'application/json',
-    ...corsHeaders // Add CORS headers
+    ...corsHeaders
   };
   
   if (cacheDuration > 0) {
@@ -50,12 +46,7 @@ function createResponse(body, status = 200, cacheDuration = 60*60*24) {
     headers['Cache-Control'] = 'no-store';
   }
   
-  // Log the response details for debugging
-  console.log(`Creating response: status=${status}, headers=${JSON.stringify(headers)}, body type=${typeof body}`);
-  
-  // Create a standard Response object
-  // This ensures properties like 'ok' are properly set based on status code
-  return new Response(JSON.stringify(body), {
+  return new Response(bodyString, {
     status,
     headers
   });
@@ -91,17 +82,22 @@ function getCacheControl(path) {
 export default {
   async fetch(request, env, ctx) {
     try {
+      // Always handle OPTIONS requests first for CORS
+      if (request.method === 'OPTIONS') {
+        return handleOptions(request);
+      }
+      
       const url = new URL(request.url);
       const path = url.pathname;
       
+      // Add proper CORS headers to all responses
+      const responseHeaders = new Headers({
+        ...corsHeaders
+      });
       console.log(`Received request for path: ${path}`);
       console.log(`Full URL: ${url.toString()}`);
 
-      // Handle CORS preflight requests
-      if (request.method === 'OPTIONS') {
-        return handleOptions();
-      }
-
+  
       // Set cache control headers based on path
       const cacheControl = getCacheControl(path);
       const headers = new Headers();
@@ -166,14 +162,22 @@ export default {
 
       // Return 404 for unknown routes
       return new Response('Not Found', { status: 404 });
+     // Make sure error responses also include CORS headers
+     ctx.passThroughOnException();
+      
     } catch (error) {
       console.error('Unhandled error:', error);
-      return new Response('Internal Server Error', { status: 500 });
+      return new Response(JSON.stringify({ error: 'Internal Server Error' }), { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
     }
   }
 };
 
-// ... existing code ...
 
 // Handle media files (memes and audio)
 async function serveMedia(request, env) {
@@ -268,7 +272,6 @@ async function serveStaticAsset(request, env) {
   }
 }
 
-// ... existing code ...
 
 async function serveMainPage(request, env) {
   try {
