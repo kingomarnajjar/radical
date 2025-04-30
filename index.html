@@ -772,6 +772,30 @@ async function safeFetch(url, options = {}) {
     showErrorMessage('Failed to load petitions. Please check the console for details.', true);
   }
 }
+// Function to initialize share buttons
+function initializeShareButtons() {
+  console.log("Initializing share buttons");
+  
+  // Find any elements with a share function and add event listeners
+  const shareButtons = document.querySelectorAll('.custom-copy-button');
+  if (shareButtons.length > 0) {
+    shareButtons.forEach(button => {
+      const proposalId = button.getAttribute('data-id');
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // If you have a smartCopyShare function, use it
+        if (typeof smartCopyShare === 'function') {
+          smartCopyShare(proposalId);
+        } else {
+          // Fallback to basic copy
+          const link = getShareableLink(proposalId);
+          copyToClipboard(link);
+        }
+      });
+    });
+  }
+}
         
         // Function to render all proposals
         function renderProposals(response) {
