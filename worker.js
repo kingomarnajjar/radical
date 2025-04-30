@@ -2,8 +2,11 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+<<<<<<< Updated upstream
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+=======
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, Cache-Control, X-Requested-With',
+>>>>>>> Stashed changes
   'Access-Control-Max-Age': '86400'
 };
 
