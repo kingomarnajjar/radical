@@ -547,6 +547,18 @@ async function loadUserData() {
             }
         }
         
+        // Hide loading indicator
+function hideLoadingIndicator() {
+  const proposalsContainer = document.getElementById('proposals-container');
+  if (proposalsContainer) {
+    // Only remove if it exists
+    const loadingIndicator = proposalsContainer.querySelector('.loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.remove();
+    }
+  }
+}
+        
         // Show error message
         function showErrorMessage(message, isRetryable = true) {
             const proposalsContainer = document.getElementById('proposals-container');
@@ -752,6 +764,8 @@ async function safeFetch(url, options = {}) {
       throw new Error('Invalid data structure received from server');
     }
     
+    // Hide loading indicator before rendering proposals
+    hideLoadingIndicator();
     renderProposals(data);
   } catch (error) {
     console.error('Error fetching proposals:', error);
