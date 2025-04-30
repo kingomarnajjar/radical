@@ -18,20 +18,22 @@ bucket_name = "memes"
 binding = "ASSETS"
 bucket_name = "assets"
 
-# Environment variables (optional)
+# Environment variables
 [vars]
 ENVIRONMENT = "production"
+# Add CORS_ALLOWED_ORIGINS if you want to restrict origins
+# CORS_ALLOWED_ORIGINS = "theradicalparty.com,*.theradicalparty.com,localhost:*"
 
-# wrangler.toml (wrangler v3.88.0^)
+# Enhanced logging for troubleshooting
 [observability.logs]
 enabled = true
+level = "debug"
 
-# Main routes for API endpoints
+# Routes configuration
 [[routes]]
 pattern = "theradicalparty.com/api/*"
 zone_name = "theradicalparty.com"
 
-# Media file routes
 [[routes]]
 pattern = "theradicalparty.com/memes/*"
 zone_name = "theradicalparty.com"
@@ -40,15 +42,42 @@ zone_name = "theradicalparty.com"
 pattern = "theradicalparty.com/audio/*"
 zone_name = "theradicalparty.com"
 
-# Ensure static assets are properly routed
 [[routes]]
 pattern = "theradicalparty.com/styles.css"
 zone_name = "theradicalparty.com"
 
-# Pages integration
+[[routes]]
+pattern = "theradicalparty.com/"
+zone_name = "theradicalparty.com"
+
+# Explicitly add route for index.html
+[[routes]]
+pattern = "theradicalparty.com/index.html"
+zone_name = "theradicalparty.com"
+
+# Add route for login page
+[[routes]]
+pattern = "theradicalparty.com/login"
+zone_name = "theradicalparty.com"
+
+# Add route for manifest
+[[routes]]
+pattern = "theradicalparty.com/manifest.webmanifest"
+zone_name = "theradicalparty.com"
+
+# Configure CORS headers in wrangler.toml
+[http_handlers]
+[http_handlers.headers]
+"Access-Control-Allow-Origin" = "*"
+"Access-Control-Allow-Methods" = "GET, POST, PUT, DELETE, OPTIONS"
+"Access-Control-Allow-Headers" = "Content-Type, Authorization, Accept, Cache-Control"
+"Access-Control-Max-Age" = "86400"
+
+# Pages integration if you're using Cloudflare Pages
 [pages]
 build_command = "npm run build"
 build_output_dir = "dist"
 
-
-
+# Triggers - useful if you need scheduled or cron jobs
+[triggers]
+crons = []
