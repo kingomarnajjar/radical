@@ -757,6 +757,19 @@ async function safeFetch(url, options = {}) {
     console.error('Error fetching proposals:', error);
     showErrorMessage('Failed to load petitions. Please check the console for details.', true);
   }
+
+  // Hide loading indicator
+function hideLoadingIndicator() {
+  const proposalsContainer = document.getElementById('proposals-container');
+  if (proposalsContainer) {
+    // Only remove if it exists
+    const loadingIndicator = proposalsContainer.querySelector('.loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.remove();
+    }
+  }
+}
+  
 }
         
         // Function to render all proposals
